@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -43,6 +44,13 @@ class ReferenceTypeCommand(JdwpCommand[ReferenceTypeResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
 
@@ -79,6 +87,14 @@ class GetValuesCommand(JdwpCommand[GetValuesResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_FIELDID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
     fields: list[FieldID]
@@ -133,6 +149,14 @@ class SetValuesCommand(JdwpCommand[SetValuesResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_FIELDID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
     slots: list[SetValuesRequestSlot]
@@ -182,6 +206,14 @@ class MonitorInfoCommand(JdwpCommand[MonitorInfoResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 5
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
 
@@ -219,6 +251,17 @@ class InvokeMethodCommand(JdwpCommand[InvokeMethodResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 6
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.THREAD_NOT_SUSPENDED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
     thread: ThreadID
@@ -275,6 +318,13 @@ class DisableCollectionCommand(JdwpCommand[DisableCollectionResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 7
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
 
@@ -305,6 +355,12 @@ class EnableCollectionCommand(JdwpCommand[EnableCollectionResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 8
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
 
@@ -337,6 +393,13 @@ class IsCollectedCommand(JdwpCommand[IsCollectedResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 9
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
 
@@ -373,6 +436,15 @@ class ReferringObjectsCommand(JdwpCommand[ReferringObjectsResponse]):
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 10
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ILLEGAL_ARGUMENT,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     object: ObjectID
     max_referrers: int

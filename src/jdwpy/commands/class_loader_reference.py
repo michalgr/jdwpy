@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -50,6 +51,14 @@ class VisibleClassesCommand(JdwpCommand[VisibleClassesResponse]):
 
     COMMAND_SET: ClassVar[int] = 14
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS_LOADER,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     class_loader: ClassLoaderID
 

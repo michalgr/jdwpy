@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -28,6 +29,14 @@ class ValueCommand(JdwpCommand[ValueResponse]):
 
     COMMAND_SET: ClassVar[int] = 10
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_STRING,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     string_object: StringID
 

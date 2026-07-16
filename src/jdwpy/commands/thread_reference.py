@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -37,6 +38,14 @@ class NameCommand(JdwpCommand[NameResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -67,6 +76,14 @@ class SuspendCommand(JdwpCommand[SuspendResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -97,6 +114,14 @@ class ResumeCommand(JdwpCommand[ResumeResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -134,6 +159,14 @@ class StatusCommand(JdwpCommand[StatusResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 4
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -166,6 +199,14 @@ class ThreadGroupCommand(JdwpCommand[ThreadGroupResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 5
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -219,6 +260,14 @@ class FramesCommand(JdwpCommand[FramesResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 6
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     start_frame: int
@@ -259,6 +308,14 @@ class FrameCountCommand(JdwpCommand[FrameCountResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 7
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -295,6 +352,15 @@ class OwnedMonitorsCommand(JdwpCommand[OwnedMonitorsResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 8
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -327,6 +393,15 @@ class CurrentContendedMonitorCommand(JdwpCommand[CurrentContendedMonitorResponse
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 9
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -357,6 +432,16 @@ class StopCommand(JdwpCommand[StopResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 10
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.OPAQUE_FRAME,
+            JdwpErrorCode.THREAD_NOT_SUSPENDED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     throwable: ObjectID
@@ -392,6 +477,14 @@ class InterruptCommand(JdwpCommand[InterruptResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 11
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -424,6 +517,14 @@ class SuspendCountCommand(JdwpCommand[SuspendCountResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 12
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
 
@@ -509,6 +610,19 @@ class ForceEarlyReturnCommand(JdwpCommand[ForceEarlyReturnResponse]):
 
     COMMAND_SET: ClassVar[int] = 11
     COMMAND: ClassVar[int] = 14
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.NO_MORE_FRAMES,
+            JdwpErrorCode.OPAQUE_FRAME,
+            JdwpErrorCode.THREAD_NOT_SUSPENDED,
+            JdwpErrorCode.TYPE_MISMATCH,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     value: JdwpValue

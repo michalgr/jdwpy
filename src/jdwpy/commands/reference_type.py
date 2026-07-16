@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -38,6 +39,14 @@ class SignatureCommand(JdwpCommand[SignatureResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -70,6 +79,14 @@ class ClassLoaderCommand(JdwpCommand[ClassLoaderResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -102,6 +119,14 @@ class ModifiersCommand(JdwpCommand[ModifiersResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -161,6 +186,15 @@ class FieldsCommand(JdwpCommand[FieldsResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 4
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.CLASS_NOT_PREPARED,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -220,6 +254,15 @@ class MethodsCommand(JdwpCommand[MethodsResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 5
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.CLASS_NOT_PREPARED,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -256,6 +299,15 @@ class GetValuesCommand(JdwpCommand[GetValuesResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 6
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_FIELDID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     fields: list[FieldID]
@@ -295,6 +347,15 @@ class SourceFileCommand(JdwpCommand[SourceFileResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 7
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ABSENT_INFORMATION,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -348,6 +409,14 @@ class NestedTypesCommand(JdwpCommand[NestedTypesResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 8
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -380,6 +449,14 @@ class StatusCommand(JdwpCommand[StatusResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 9
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -416,6 +493,14 @@ class InterfacesCommand(JdwpCommand[InterfacesResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 10
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -448,6 +533,14 @@ class ClassObjectCommand(JdwpCommand[ClassObjectResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 11
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -480,6 +573,16 @@ class SourceDebugExtensionCommand(JdwpCommand[SourceDebugExtensionResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 12
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ABSENT_INFORMATION,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -517,6 +620,14 @@ class SignatureWithGenericCommand(JdwpCommand[SignatureWithGenericResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 13
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -579,6 +690,15 @@ class FieldsWithGenericCommand(JdwpCommand[FieldsWithGenericResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 14
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.CLASS_NOT_PREPARED,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -641,6 +761,15 @@ class MethodsWithGenericCommand(JdwpCommand[MethodsWithGenericResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 15
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.CLASS_NOT_PREPARED,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -677,6 +806,16 @@ class InstancesCommand(JdwpCommand[InstancesResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 16
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ILLEGAL_ARGUMENT,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     max_instances: int
@@ -719,6 +858,15 @@ class ClassFileVersionCommand(JdwpCommand[ClassFileVersionResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 17
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ABSENT_INFORMATION,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 
@@ -755,6 +903,16 @@ class ConstantPoolCommand(JdwpCommand[ConstantPoolResponse]):
 
     COMMAND_SET: ClassVar[int] = 2
     COMMAND: ClassVar[int] = 18
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ABSENT_INFORMATION,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
 

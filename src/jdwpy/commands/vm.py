@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -43,6 +44,12 @@ class VersionCommand(JdwpCommand[VersionResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass  # Empty payload request
@@ -97,6 +104,12 @@ class ClassesBySignatureCommand(JdwpCommand[ClassesBySignatureResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     signature: str
 
@@ -156,6 +169,12 @@ class AllClassesCommand(JdwpCommand[AllClassesResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -188,6 +207,12 @@ class AllThreadsCommand(JdwpCommand[AllThreadsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 4
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -220,6 +245,12 @@ class TopLevelThreadGroupsCommand(JdwpCommand[TopLevelThreadGroupsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 5
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -246,6 +277,11 @@ class DisposeCommand(JdwpCommand[DisposeResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 6
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -290,6 +326,12 @@ class IDSizesCommand(JdwpCommand[IDSizesResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 7
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass  # Empty payload request
@@ -316,6 +358,12 @@ class SuspendCommand(JdwpCommand[SuspendResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 8
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -344,6 +392,11 @@ class ResumeCommand(JdwpCommand[ResumeResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 9
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -370,6 +423,11 @@ class ExitCommand(JdwpCommand[ExitResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 10
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     exit_code: int
 
@@ -400,6 +458,12 @@ class CreateStringCommand(JdwpCommand[CreateStringResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 11
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     utf: str
 
@@ -450,6 +514,12 @@ class CapabilitiesCommand(JdwpCommand[CapabilitiesResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 12
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -493,6 +563,12 @@ class ClassPathsCommand(JdwpCommand[ClassPathsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 13
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -536,6 +612,11 @@ class DisposeObjectsCommand(JdwpCommand[DisposeObjectsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 14
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     requests: list[DisposeObjectsRequest]
 
@@ -570,6 +651,11 @@ class HoldEventsCommand(JdwpCommand[HoldEventsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 15
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -596,6 +682,11 @@ class ReleaseEventsCommand(JdwpCommand[ReleaseEventsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 16
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -719,6 +810,12 @@ class CapabilitiesNewCommand(JdwpCommand[CapabilitiesNewResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 17
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -764,6 +861,27 @@ class RedefineClassesCommand(JdwpCommand[RedefineClassesResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 18
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ADD_METHOD_NOT_IMPLEMENTED,
+            JdwpErrorCode.CIRCULAR_CLASS_DEFINITION,
+            JdwpErrorCode.CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED,
+            JdwpErrorCode.CLASS_MODIFIERS_CHANGE_NOT_IMPLEMENTED,
+            JdwpErrorCode.DELETE_METHOD_NOT_IMPLEMENTED,
+            JdwpErrorCode.FAILS_VERIFICATION,
+            JdwpErrorCode.HIERARCHY_CHANGE_NOT_IMPLEMENTED,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_CLASS_FORMAT,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED,
+            JdwpErrorCode.NAMES_DONT_MATCH,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.SCHEMA_CHANGE_NOT_IMPLEMENTED,
+            JdwpErrorCode.UNSUPPORTED_VERSION,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     classes: list[RedefineClassesRequest]
 
@@ -798,6 +916,13 @@ class SetDefaultStratumCommand(JdwpCommand[SetDefaultStratumResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 19
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     stratum_id: str
 
@@ -860,6 +985,12 @@ class AllClassesWithGenericCommand(JdwpCommand[AllClassesWithGenericResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 20
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
@@ -892,6 +1023,14 @@ class InstanceCountsCommand(JdwpCommand[InstanceCountsResponse]):
 
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 21
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ILLEGAL_ARGUMENT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_types: list[ReferenceTypeID]
 

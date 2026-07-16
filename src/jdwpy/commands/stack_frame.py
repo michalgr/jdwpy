@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -50,6 +51,16 @@ class GetValuesCommand(JdwpCommand[GetValuesResponse]):
 
     COMMAND_SET: ClassVar[int] = 16
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_FRAMEID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_SLOT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     frame: FrameID
@@ -107,6 +118,16 @@ class SetValuesCommand(JdwpCommand[SetValuesResponse]):
 
     COMMAND_SET: ClassVar[int] = 16
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_FRAMEID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.OPAQUE_FRAME,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     frame: FrameID
@@ -149,6 +170,15 @@ class ThisObjectCommand(JdwpCommand[ThisObjectResponse]):
 
     COMMAND_SET: ClassVar[int] = 16
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_FRAMEID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     frame: FrameID
@@ -184,6 +214,19 @@ class PopFramesCommand(JdwpCommand[PopFramesResponse]):
 
     COMMAND_SET: ClassVar[int] = 16
     COMMAND: ClassVar[int] = 4
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_FRAMEID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.NO_MORE_FRAMES,
+            JdwpErrorCode.OPAQUE_FRAME,
+            JdwpErrorCode.THREAD_NOT_SUSPENDED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     thread: ThreadID
     frame: FrameID

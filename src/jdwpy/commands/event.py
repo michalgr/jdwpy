@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import ClassVar, Self
@@ -512,6 +513,11 @@ class CompositeCommand(JdwpCommand[None]):
 
     COMMAND_SET: ClassVar[int] = 64
     COMMAND: ClassVar[int] = 100
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+        ]
+    )
 
     suspend_policy: JdwpSuspendPolicy
     events: list[JdwpEvent]

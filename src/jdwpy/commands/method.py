@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -59,6 +60,15 @@ class LineTableCommand(JdwpCommand[LineTableResponse]):
 
     COMMAND_SET: ClassVar[int] = 6
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     method: MethodID
@@ -129,6 +139,16 @@ class VariableTableCommand(JdwpCommand[VariableTableResponse]):
 
     COMMAND_SET: ClassVar[int] = 6
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ABSENT_INFORMATION,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     method: MethodID
@@ -170,6 +190,16 @@ class BytecodesCommand(JdwpCommand[BytecodesResponse]):
 
     COMMAND_SET: ClassVar[int] = 6
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     method: MethodID
@@ -207,6 +237,16 @@ class IsObsoleteCommand(JdwpCommand[IsObsoleteResponse]):
 
     COMMAND_SET: ClassVar[int] = 6
     COMMAND: ClassVar[int] = 4
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     method: MethodID
@@ -280,6 +320,16 @@ class VariableTableWithGenericCommand(JdwpCommand[VariableTableWithGenericRespon
 
     COMMAND_SET: ClassVar[int] = 6
     COMMAND: ClassVar[int] = 5
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.ABSENT_INFORMATION,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     ref_type: ReferenceTypeID
     method: MethodID

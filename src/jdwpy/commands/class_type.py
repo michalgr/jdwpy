@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -36,6 +37,14 @@ class SuperclassCommand(JdwpCommand[SuperclassResponse]):
 
     COMMAND_SET: ClassVar[int] = 3
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     clazz: ClassID
 
@@ -83,6 +92,16 @@ class SetValuesCommand(JdwpCommand[SetValuesResponse]):
 
     COMMAND_SET: ClassVar[int] = 3
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.CLASS_NOT_PREPARED,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_FIELDID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     clazz: ClassID
     slots: list[SetValuesRequestSlot]
@@ -127,6 +146,17 @@ class InvokeMethodCommand(JdwpCommand[InvokeMethodResponse]):
 
     COMMAND_SET: ClassVar[int] = 3
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.THREAD_NOT_SUSPENDED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     clazz: ClassID
     thread: ThreadID
@@ -186,6 +216,17 @@ class NewInstanceCommand(JdwpCommand[NewInstanceResponse]):
 
     COMMAND_SET: ClassVar[int] = 3
     COMMAND: ClassVar[int] = 4
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.THREAD_NOT_SUSPENDED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     clazz: ClassID
     thread: ThreadID

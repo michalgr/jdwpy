@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from dataclasses import dataclass
 from typing import ClassVar, Self
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
@@ -28,6 +29,14 @@ class NameCommand(JdwpCommand[NameResponse]):
 
     COMMAND_SET: ClassVar[int] = 12
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD_GROUP,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     group: ThreadGroupID
 
@@ -60,6 +69,14 @@ class ParentCommand(JdwpCommand[ParentResponse]):
 
     COMMAND_SET: ClassVar[int] = 12
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD_GROUP,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     group: ThreadGroupID
 
@@ -102,6 +119,14 @@ class ChildrenCommand(JdwpCommand[ChildrenResponse]):
 
     COMMAND_SET: ClassVar[int] = 12
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_THREAD_GROUP,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     group: ThreadGroupID
 

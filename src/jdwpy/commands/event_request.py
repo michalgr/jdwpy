@@ -1,4 +1,5 @@
 from __future__ import annotations
+from jdwpy.constants import JdwpErrorCode
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import ClassVar, Self
@@ -284,6 +285,22 @@ class SetCommand(JdwpCommand[SetResponse]):
 
     COMMAND_SET: ClassVar[int] = 15
     COMMAND: ClassVar[int] = 1
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_CLASS,
+            JdwpErrorCode.INVALID_COUNT,
+            JdwpErrorCode.INVALID_EVENT_TYPE,
+            JdwpErrorCode.INVALID_FIELDID,
+            JdwpErrorCode.INVALID_LOCATION,
+            JdwpErrorCode.INVALID_METHODID,
+            JdwpErrorCode.INVALID_OBJECT,
+            JdwpErrorCode.INVALID_STRING,
+            JdwpErrorCode.INVALID_THREAD,
+            JdwpErrorCode.NOT_IMPLEMENTED,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     event_kind: JdwpEventKind
     suspend_policy: JdwpSuspendPolicy
@@ -330,6 +347,13 @@ class ClearCommand(JdwpCommand[ClearResponse]):
 
     COMMAND_SET: ClassVar[int] = 15
     COMMAND: ClassVar[int] = 2
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.INVALID_EVENT_TYPE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     event_kind: JdwpEventKind
     request_id: int
@@ -365,6 +389,12 @@ class ClearAllBreakpointsCommand(JdwpCommand[ClearAllBreakpointsResponse]):
 
     COMMAND_SET: ClassVar[int] = 15
     COMMAND: ClassVar[int] = 3
+    ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset(
+        [
+            JdwpErrorCode.NONE,
+            JdwpErrorCode.VM_DEAD,
+        ]
+    )
 
     def serialize(self, writer: JdwpWriter) -> None:
         pass
