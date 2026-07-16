@@ -1,5 +1,11 @@
 from __future__ import annotations
-from jdwpy.constants import JdwpTag, JdwpErrorCode
+from jdwpy.constants import (
+    JdwpTag,
+    JdwpErrorCode,
+    JdwpEventKind,
+    JdwpSuspendPolicy,
+    JdwpTypeTag,
+)
 from jdwpy.spec import (
     IdSizesSpec,
     ObjectID,
@@ -7,6 +13,7 @@ from jdwpy.spec import (
     FieldID,
     MethodID,
     FrameID,
+    Location,
 )
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
@@ -20,12 +27,16 @@ from jdwpy.commands import JdwpCommand, JdwpResponse
 __all__ = [
     "JdwpTag",
     "JdwpErrorCode",
+    "JdwpEventKind",
+    "JdwpSuspendPolicy",
+    "JdwpTypeTag",
     "IdSizesSpec",
     "ObjectID",
     "ReferenceTypeID",
     "FieldID",
     "MethodID",
     "FrameID",
+    "Location",
     "JdwpPacket",
     "JdwpCommandPacket",
     "JdwpReplyPacket",

@@ -13,6 +13,17 @@ FieldID = NewType("FieldID", int)
 MethodID = NewType("MethodID", int)
 FrameID = NewType("FrameID", int)
 
+
+@dataclass(frozen=True)
+class Location:
+    """Represents a composite JDWP code execution Location."""
+
+    type_tag: int
+    class_id: ReferenceTypeID
+    method_id: MethodID
+    index: int
+
+
 _STRUCT_32 = struct.Struct(">I")
 _STRUCT_64 = struct.Struct(">Q")
 

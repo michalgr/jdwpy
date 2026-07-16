@@ -8,6 +8,7 @@ from jdwpy.spec import (
     FieldID,
     MethodID,
     FrameID,
+    Location,
 )
 
 
@@ -82,6 +83,15 @@ class JdwpReader:
         """Reads a variable-length frame ID."""
         return FrameID(self._read_id(self.spec.frame_id_struct))
 
+    def read_location(self) -> Location:
+        """Reads a composite Location structure."""
+        return Location(
+            type_tag=self.read_byte(),
+            class_id=self.read_reference_type_id(),
+            method_id=self.read_method_id(),
+            index=self.read_long(),
+        )
+
 
 class JdwpWriter:
     """Helper stream writer to serialize big-endian JDWP values to an in-memory bytearray."""
@@ -147,4 +157,12 @@ class JdwpWriter:
     def write_frame_id(self, val: FrameID) -> Self:
         """Writes a variable-length frame ID."""
         self._buffer.extend(self.spec.frame_id_struct.pack(val))
+        return self
+
+    def write_location(self, val: Location) -> Self:
+        """Writes a composite Location structure."""
+        self.write_byte(val.type_tag)
+        self.write_reference_type_id(val.class_id)
+        self.write_method_id(val.method_id)
+        self.write_long(val.index)
         return self
