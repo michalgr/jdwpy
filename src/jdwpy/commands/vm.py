@@ -9,6 +9,7 @@ from jdwpy.io import JdwpReader, JdwpWriter
 @dataclass
 class VersionResponse(JdwpResponse):
     """Represents the response of VirtualMachine.Version command."""
+
     description: str
     jdwp_major: int
     jdwp_minor: int
@@ -22,7 +23,7 @@ class VersionResponse(JdwpResponse):
             jdwp_major=reader.read_int(),
             jdwp_minor=reader.read_int(),
             vm_version=reader.read_string(),
-            vm_name=reader.read_string()
+            vm_name=reader.read_string(),
         )
 
     def serialize(self, writer: JdwpWriter) -> None:
@@ -37,6 +38,7 @@ class VersionResponse(JdwpResponse):
 @dataclass
 class VersionCommand(JdwpCommand[VersionResponse]):
     """JDWP Command Set 1, Command 1: VirtualMachine.Version."""
+
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 1
 
@@ -51,6 +53,7 @@ class VersionCommand(JdwpCommand[VersionResponse]):
 @dataclass
 class IDSizesResponse(JdwpResponse):
     """Represents the response of VirtualMachine.IDSizes command."""
+
     field_id_size: int
     method_id_size: int
     object_id_size: int
@@ -64,7 +67,7 @@ class IDSizesResponse(JdwpResponse):
             method_id_size=reader.read_int(),
             object_id_size=reader.read_int(),
             reference_type_id_size=reader.read_int(),
-            frame_id_size=reader.read_int()
+            frame_id_size=reader.read_int(),
         )
 
     def serialize(self, writer: JdwpWriter) -> None:
@@ -79,6 +82,7 @@ class IDSizesResponse(JdwpResponse):
 @dataclass
 class IDSizesCommand(JdwpCommand[IDSizesResponse]):
     """JDWP Command Set 1, Command 7: VirtualMachine.IDSizes."""
+
     COMMAND_SET: ClassVar[int] = 1
     COMMAND: ClassVar[int] = 7
 

@@ -8,11 +8,16 @@ from jdwpy.spec import IdSizesSpec
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
 from jdwpy.commands.registry import get_command_class
 from jdwpy.commands.vm import IDSizesResponse
-from jdwpy.connection import JdwpPacketSender, JdwpPacketReceiver, establish_jdwp_connection
+from jdwpy.connection import (
+    JdwpPacketSender,
+    JdwpPacketReceiver,
+    establish_jdwp_connection,
+)
 
 
 class JdwpProxySession:
     """Manages a single bi-directional debugger-to-JVM proxy session using composition."""
+
     dbg_sender: JdwpPacketSender
     dbg_receiver: JdwpPacketReceiver
     vm_sender: JdwpPacketSender
@@ -46,7 +51,9 @@ class JdwpProxySession:
     ) -> Self:
         """Factory method that establishes JVM connections and runs bi-directional handshakes."""
         # 1. Connect to JVM JDWP agent and run handshake
-        vm_sender, vm_receiver = await establish_jdwp_connection(target_host, target_port)
+        vm_sender, vm_receiver = await establish_jdwp_connection(
+            target_host, target_port
+        )
         print(f"[*] Connected to target JVM at {target_host}:{target_port}")
 
         # 2. Negotiate debugger client handshake
@@ -70,7 +77,7 @@ class JdwpProxySession:
         if isinstance(packet, JdwpCommandPacket):
             if packet.command_set == 1 and packet.command == 7:
                 self.idsizes_cmd_ids.add(packet.id)
-        
+
         await self.vm_sender.send_packet(packet)
         self._log_packet(packet, "Debugger -> VM")
 
@@ -88,7 +95,7 @@ class JdwpProxySession:
                         f"object={resp.object_id_size} refType={resp.reference_type_id_size} "
                         f"frame={resp.frame_id_size}\033[0m"
                     )
-        
+
         await self.dbg_sender.send_packet(packet)
         self._log_packet(packet, "VM -> Debugger")
 
@@ -112,7 +119,9 @@ class JdwpProxySession:
         """Orchestrates connection negotiation, packet routing, and graceful cleanup."""
         try:
             # 1. Start proxy receiver loops
-            self.dbg_receiver.start(self._handle_debugger_packet, self._handle_debugger_exception)
+            self.dbg_receiver.start(
+                self._handle_debugger_packet, self._handle_debugger_exception
+            )
             self.vm_receiver.start(self._handle_vm_packet, self._handle_vm_exception)
 
             # 2. Wait for termination and close resources cleanly
@@ -127,10 +136,14 @@ class JdwpProxySession:
         arrow = ">>>" if "Debugger" in label else "<<<"
         color_start = "\033[92m" if "Debugger" in label else "\033[94m"
         color_end = "\033[0m"
-        
+
         if isinstance(packet, JdwpCommandPacket):
             cmd_cls = get_command_class(packet.command_set, packet.command)
-            cmd_name = cmd_cls.__name__ if cmd_cls else f"UnknownCmd({packet.command_set}:{packet.command})"
+            cmd_name = (
+                cmd_cls.__name__
+                if cmd_cls
+                else f"UnknownCmd({packet.command_set}:{packet.command})"
+            )
             print(
                 f"{color_start}{arrow} [Command]{color_end} "
                 f"ID: {packet.id:<4} | {cmd_name:<18} | Set: {packet.command_set:<2} Cmd: {packet.command:<2} | "
@@ -138,7 +151,11 @@ class JdwpProxySession:
             )
         elif isinstance(packet, JdwpReplyPacket):
             err_val = packet.error_code
-            err_enum = JdwpErrorCode(err_val) if err_val in JdwpErrorCode.__members__.values() else None
+            err_enum = (
+                JdwpErrorCode(err_val)
+                if err_val in JdwpErrorCode.__members__.values()
+                else None
+            )
             err_name = err_enum.name if err_enum else f"Unknown({err_val})"
             print(
                 f"{color_start}{arrow} [Reply  ]{color_end} "
@@ -151,15 +168,34 @@ async def main() -> None:
     parser = argparse.ArgumentParser(
         description="Async JDWP Logging Proxy - bi-directionally traces debugger traffic."
     )
-    parser.add_argument("--listen-port", type=int, default=5005, help="Port to listen for debugger client (default: 5005)")
-    parser.add_argument("--target-host", type=str, default="127.0.0.1", help="Target JVM Host (default: 127.0.0.1)")
-    parser.add_argument("--target-port", type=int, default=8700, help="Target JVM JDWP Port (default: 8700)")
+    parser.add_argument(
+        "--listen-port",
+        type=int,
+        default=5005,
+        help="Port to listen for debugger client (default: 5005)",
+    )
+    parser.add_argument(
+        "--target-host",
+        type=str,
+        default="127.0.0.1",
+        help="Target JVM Host (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--target-port",
+        type=int,
+        default=8700,
+        help="Target JVM JDWP Port (default: 8700)",
+    )
     args = parser.parse_args()
 
     print(f"[*] Starting JDWP Logging Proxy on port {args.listen_port}...")
-    print(f"[*] Forwarding traffic to JVM JDWP agent at {args.target_host}:{args.target_port}")
+    print(
+        f"[*] Forwarding traffic to JVM JDWP agent at {args.target_host}:{args.target_port}"
+    )
 
-    async def client_connected(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    async def client_connected(
+        reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
         peer = writer.get_extra_info("peername")
         print(f"[*] Accepted debugger client connection from {peer}")
         try:

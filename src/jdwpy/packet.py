@@ -6,9 +6,11 @@ from dataclasses import dataclass
 from typing import ClassVar
 from jdwpy.constants import JdwpErrorCode
 
+
 @dataclass(frozen=True)
 class JdwpPacket(ABC):
     """Abstract Base Class representing a raw JDWP Packet."""
+
     id: int
     flags: int
     data: bytes
@@ -46,12 +48,12 @@ class JdwpPacket(ABC):
         """Asynchronously reads and deserializes a complete JDWP packet from the stream reader."""
         header = await reader.readexactly(11)
         length, _, flags = cls.COMMON_HEADER_STRUCT.unpack(header[:9])
-        
+
         if length < 11:
             raise ValueError(f"Invalid JDWP packet length: {length} (must be >= 11)")
-        
+
         data = await reader.readexactly(length - 11)
-        
+
         if flags & 0x80:
             return JdwpReplyPacket.parse(header, data)
         else:
@@ -61,31 +63,43 @@ class JdwpPacket(ABC):
 @dataclass(frozen=True)
 class JdwpCommandPacket(JdwpPacket):
     """Represents a JDWP Command Packet."""
+
     command_set: int
     command: int
 
     HEADER_STRUCT: ClassVar[struct.Struct] = struct.Struct(">IIBBB")
 
     def serialize(self, writer: asyncio.StreamWriter) -> None:
-        header = self.HEADER_STRUCT.pack(self.length, self.id, self.flags, self.command_set, self.command)
+        header = self.HEADER_STRUCT.pack(
+            self.length, self.id, self.flags, self.command_set, self.command
+        )
         writer.write(header + self.data)
 
     @classmethod
     def parse(cls, header: bytes, data: bytes) -> JdwpCommandPacket:
         """Parses a command packet from pre-read header and data bytes."""
         _, packet_id, flags, command_set, command = cls.HEADER_STRUCT.unpack(header)
-        return cls(id=packet_id, flags=flags, command_set=command_set, command=command, data=data)
+        return cls(
+            id=packet_id,
+            flags=flags,
+            command_set=command_set,
+            command=command,
+            data=data,
+        )
 
 
 @dataclass(frozen=True)
 class JdwpReplyPacket(JdwpPacket):
     """Represents a JDWP Reply Packet."""
+
     error_code: JdwpErrorCode
 
     HEADER_STRUCT: ClassVar[struct.Struct] = struct.Struct(">IIBH")
 
     def serialize(self, writer: asyncio.StreamWriter) -> None:
-        header = self.HEADER_STRUCT.pack(self.length, self.id, self.flags, self.error_code)
+        header = self.HEADER_STRUCT.pack(
+            self.length, self.id, self.flags, self.error_code
+        )
         writer.write(header + self.data)
 
     @classmethod

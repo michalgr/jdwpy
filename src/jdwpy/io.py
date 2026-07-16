@@ -1,10 +1,19 @@
 from __future__ import annotations
 import struct
 from typing import Self
-from jdwpy.spec import IdSizesSpec, ObjectID, ReferenceTypeID, FieldID, MethodID, FrameID
+from jdwpy.spec import (
+    IdSizesSpec,
+    ObjectID,
+    ReferenceTypeID,
+    FieldID,
+    MethodID,
+    FrameID,
+)
+
 
 class JdwpReader:
     """Helper stream reader to deserialize big-endian JDWP values from a bytes buffer."""
+
     spec: IdSizesSpec
     data: bytes
     offset: int
@@ -76,6 +85,7 @@ class JdwpReader:
 
 class JdwpWriter:
     """Helper stream writer to serialize big-endian JDWP values to an in-memory bytearray."""
+
     spec: IdSizesSpec
     _buffer: bytearray
 

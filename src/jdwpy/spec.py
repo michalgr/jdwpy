@@ -16,6 +16,7 @@ FrameID = NewType("FrameID", int)
 _STRUCT_32 = struct.Struct(">I")
 _STRUCT_64 = struct.Struct(">Q")
 
+
 def _get_struct_for_size(size: int) -> struct.Struct:
     if size == 4:
         return _STRUCT_32
@@ -23,9 +24,11 @@ def _get_struct_for_size(size: int) -> struct.Struct:
         return _STRUCT_64
     raise ValueError(f"Unsupported ID size: {size}")
 
+
 @dataclass(frozen=True)
 class IdSizesSpec:
     """Tracks and pre-compiles JVM-specific Struct formats for variable length JDWP IDs."""
+
     field_id_struct: struct.Struct
     method_id_struct: struct.Struct
     object_id_struct: struct.Struct
@@ -59,4 +62,3 @@ class IdSizesSpec:
             reference_type_id_size=response.reference_type_id_size,
             frame_id_size=response.frame_id_size,
         )
-

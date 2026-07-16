@@ -1,16 +1,17 @@
 from __future__ import annotations
 import asyncio
-from typing import Callable, Awaitable, Self, cast, overload, Any
+from typing import Callable, Awaitable, Self, overload, Any
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
 from jdwpy.spec import IdSizesSpec
-from jdwpy.io import JdwpWriter
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
 from jdwpy.commands.registry import get_response_class
 from jdwpy.commands.vm import IDSizesResponse
 
+
 class JdwpPacketSender:
     """Handles writing and flushing JdwpPacket objects to a stream writer."""
+
     _writer: asyncio.StreamWriter
 
     def __init__(self, writer: asyncio.StreamWriter) -> None:
@@ -29,6 +30,7 @@ class JdwpPacketSender:
 
 class JdwpPacketReceiver:
     """Asynchronously reads JdwpPacket objects from a stream reader in a background loop."""
+
     _reader: asyncio.StreamReader
     _read_task: asyncio.Task | None
 
@@ -66,10 +68,12 @@ class JdwpPacketReceiver:
             self._read_task.cancel()
 
 
-async def establish_jdwp_connection(host: str, port: int) -> tuple[JdwpPacketSender, JdwpPacketReceiver]:
+async def establish_jdwp_connection(
+    host: str, port: int
+) -> tuple[JdwpPacketSender, JdwpPacketReceiver]:
     """Establishes TCP connection, runs JDWP handshake, and returns packet sender/receiver."""
     reader, writer = await asyncio.open_connection(host, port)
-    
+
     # Handshake negotiation on raw socket
     writer.write(HANDSHAKE)
     await writer.drain()
@@ -77,13 +81,16 @@ async def establish_jdwp_connection(host: str, port: int) -> tuple[JdwpPacketSen
     if response != HANDSHAKE:
         writer.close()
         await writer.wait_closed()
-        raise RuntimeError(f"Handshake failed. Expected '{HANDSHAKE.decode()}', got '{response.decode(errors='replace')}'")
+        raise RuntimeError(
+            f"Handshake failed. Expected '{HANDSHAKE.decode()}', got '{response.decode(errors='replace')}'"
+        )
 
     return JdwpPacketSender(writer), JdwpPacketReceiver(reader)
 
 
 class JdwpPacketConnection:
     """Coordinates JdwpPacketSender and JdwpPacketReceiver for client request-reply mapping."""
+
     sender: JdwpPacketSender
     receiver: JdwpPacketReceiver
     _pending_replies: dict[int, asyncio.Future[JdwpReplyPacket]]
@@ -98,8 +105,7 @@ class JdwpPacketConnection:
     def start(self) -> None:
         """Starts the background reading task."""
         self.receiver.start(
-            on_packet=self._handle_packet,
-            on_exception=self._handle_exception
+            on_packet=self._handle_packet, on_exception=self._handle_exception
         )
 
     @classmethod
@@ -109,8 +115,6 @@ class JdwpPacketConnection:
         conn = cls(sender, receiver)
         conn.start()
         return conn
-
-
 
     async def _handle_packet(self, packet: JdwpPacket) -> None:
         if isinstance(packet, JdwpReplyPacket):
@@ -141,11 +145,14 @@ class JdwpPacketConnection:
 
 class JdwpConnection:
     """Higher-level connection abstraction that operates on JdwpCommand and JdwpResponse classes."""
+
     _packet_conn: JdwpPacketConnection
     spec: IdSizesSpec
     _next_packet_id: int
 
-    def __init__(self, packet_conn: JdwpPacketConnection, spec: IdSizesSpec | None = None) -> None:
+    def __init__(
+        self, packet_conn: JdwpPacketConnection, spec: IdSizesSpec | None = None
+    ) -> None:
         self._packet_conn = packet_conn
         self.spec = spec or IdSizesSpec.create()
         self._next_packet_id = 1
@@ -162,14 +169,11 @@ class JdwpConnection:
         packet_conn = await JdwpPacketConnection.connect(host, port)
         return cls(packet_conn)
 
+    @overload
+    async def send_command(self, cmd: JdwpCommand[None]) -> None: ...
 
     @overload
-    async def send_command(self, cmd: JdwpCommand[None]) -> None:
-        ...
-
-    @overload
-    async def send_command[T: JdwpResponse](self, cmd: JdwpCommand[T]) -> T:
-        ...
+    async def send_command[T: JdwpResponse](self, cmd: JdwpCommand[T]) -> T: ...
 
     async def send_command(self, cmd: JdwpCommand[Any]) -> JdwpResponse | None:
         """Sends a JdwpCommand, awaiting and validating the response packet dynamically."""
@@ -178,7 +182,7 @@ class JdwpConnection:
             flags=0,
             command_set=cmd.COMMAND_SET,
             command=cmd.COMMAND,
-            data=cmd.to_bytes(self.spec)
+            data=cmd.to_bytes(self.spec),
         )
 
         response_class = get_response_class(cmd.__class__)
@@ -198,7 +202,7 @@ class JdwpConnection:
 
         # Deserialize response
         response = response_class.from_bytes(reply.data, self.spec)
-        
+
         # Dynamic ID sizes spec upgrade detection
         if isinstance(response, IDSizesResponse):
             self.spec = IdSizesSpec.from_response(response)

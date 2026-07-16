@@ -1,10 +1,12 @@
 from __future__ import annotations
 from typing import ClassVar
 import asyncio
-import struct
 import pytest
-from jdwpy.constants import JdwpTag, JdwpErrorCode, HANDSHAKE
-from jdwpy.spec import IdSizesSpec, ObjectID, ReferenceTypeID, FieldID, MethodID, FrameID
+from jdwpy.constants import JdwpErrorCode
+from jdwpy.spec import (
+    IdSizesSpec,
+    ObjectID,
+)
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
@@ -16,11 +18,17 @@ from jdwpy.commands import (
     IDSizesResponse,
     JdwpCommand,
 )
-from jdwpy.connection import JdwpConnection, JdwpPacketConnection, JdwpPacketSender, JdwpPacketReceiver
+from jdwpy.connection import (
+    JdwpConnection,
+    JdwpPacketConnection,
+    JdwpPacketSender,
+    JdwpPacketReceiver,
+)
 
 
 class MockStreamWriter:
     """Mock StreamWriter for testing connections completely in-memory."""
+
     def __init__(self) -> None:
         self.buffer = bytearray()
         self.closed = False
@@ -38,7 +46,9 @@ class MockStreamWriter:
         await asyncio.sleep(0)
 
 
-def create_mock_connection() -> tuple[JdwpConnection, asyncio.StreamReader, MockStreamWriter]:
+def create_mock_connection() -> tuple[
+    JdwpConnection, asyncio.StreamReader, MockStreamWriter
+]:
     """Helper factory that constructs all JDWP connection mock objects and starts the loop."""
     reader = asyncio.StreamReader()
     writer = MockStreamWriter()
@@ -58,7 +68,7 @@ def test_id_sizes_spec_struct_compilation() -> None:
         method_id_size=8,
         object_id_size=8,
         reference_type_id_size=8,
-        frame_id_size=8
+        frame_id_size=8,
     )
     assert spec_8.field_id_struct.format == ">Q"
     assert spec_8.object_id_struct.format == ">Q"
@@ -70,7 +80,7 @@ def test_id_sizes_spec_struct_compilation() -> None:
         method_id_size=4,
         object_id_size=4,
         reference_type_id_size=4,
-        frame_id_size=4
+        frame_id_size=4,
     )
     assert spec_4.field_id_struct.format == ">I"
     assert spec_4.object_id_struct.format == ">I"
@@ -81,17 +91,17 @@ def test_jdwp_writer_and_reader_primitives() -> None:
     """Tests big-endian serialization and parsing of primitives."""
     spec = IdSizesSpec.create()
     writer = JdwpWriter(spec)
-    
+
     writer.write_byte(0xAB)
     writer.write_boolean(True)
     writer.write_boolean(False)
     writer.write_int(0x12345678)
     writer.write_long(0x1122334455667788)
     writer.write_string("Hello JDWP!")
-    
+
     serialized = writer.get_bytes()
     reader = JdwpReader(serialized, spec)
-    
+
     assert reader.read_byte() == 0xAB
     assert reader.read_boolean() is True
     assert reader.read_boolean() is False
@@ -107,7 +117,7 @@ def test_jdwp_writer_and_reader_ids() -> None:
     spec_8 = IdSizesSpec.create(object_id_size=8)
     writer_8 = JdwpWriter(spec_8)
     writer_8.write_object_id(ObjectID(0xABCDEF1234567890))
-    
+
     reader_8 = JdwpReader(writer_8.get_bytes(), spec_8)
     assert reader_8.read_object_id() == 0xABCDEF1234567890
 
@@ -115,7 +125,7 @@ def test_jdwp_writer_and_reader_ids() -> None:
     spec_4 = IdSizesSpec.create(object_id_size=4)
     writer_4 = JdwpWriter(spec_4)
     writer_4.write_object_id(ObjectID(0x76543210))
-    
+
     reader_4 = JdwpReader(writer_4.get_bytes(), spec_4)
     assert reader_4.read_object_id() == 0x76543210
 
@@ -126,21 +136,17 @@ async def test_packet_stream_serialization() -> None:
     # 1. Test Command Packet
     cmd_payload = b"\x00\x00\x00\x05Hello"
     cmd_packet = JdwpCommandPacket(
-        id=42,
-        flags=0x00,
-        command_set=1,
-        command=7,
-        data=cmd_payload
+        id=42, flags=0x00, command_set=1, command=7, data=cmd_payload
     )
-    
+
     writer = MockStreamWriter()
     cmd_packet.serialize(writer)  # type: ignore
-    
+
     # Read back from stream reader
     reader = asyncio.StreamReader()
     reader.feed_data(writer.buffer)
     reader.feed_eof()
-    
+
     deserialized = await JdwpPacket.deserialize(reader)
     assert isinstance(deserialized, JdwpCommandPacket)
     assert deserialized.id == 42
@@ -153,19 +159,16 @@ async def test_packet_stream_serialization() -> None:
     # 2. Test Reply Packet
     reply_payload = b"World!"
     reply_packet = JdwpReplyPacket(
-        id=42,
-        flags=0x80,
-        error_code=JdwpErrorCode.INVALID_OBJECT,
-        data=reply_payload
+        id=42, flags=0x80, error_code=JdwpErrorCode.INVALID_OBJECT, data=reply_payload
     )
-    
+
     writer_reply = MockStreamWriter()
     reply_packet.serialize(writer_reply)  # type: ignore
-    
+
     reader_reply = asyncio.StreamReader()
     reader_reply.feed_data(writer_reply.buffer)
     reader_reply.feed_eof()
-    
+
     deserialized_reply = await JdwpPacket.deserialize(reader_reply)
     assert isinstance(deserialized_reply, JdwpReplyPacket)
     assert deserialized_reply.id == 42
@@ -196,7 +199,7 @@ def test_concrete_commands_payloads() -> None:
         jdwp_major=1,
         jdwp_minor=6,
         vm_version="14.0.1",
-        vm_name="OpenJDK"
+        vm_name="OpenJDK",
     )
     deserialized_resp = VersionResponse.from_bytes(resp.to_bytes(spec), spec)
     assert deserialized_resp.description == "JVM 14.0"
@@ -211,7 +214,7 @@ def test_concrete_commands_payloads() -> None:
         method_id_size=4,
         object_id_size=8,
         reference_type_id_size=8,
-        frame_id_size=8
+        frame_id_size=8,
     )
     deserialized_ids = IDSizesResponse.from_bytes(resp_ids.to_bytes(spec), spec)
     assert deserialized_ids.field_id_size == 4
@@ -228,10 +231,10 @@ async def test_jdwp_connection_full_flow() -> None:
 
     # 2. Send IDSizesCommand and intercept raw writer bytes to feed mock response
     task = asyncio.create_task(conn.send_command(IDSizesCommand()))
-    
+
     # Let the event loop run to send command
     await asyncio.sleep(0)
-    
+
     # Verify command was sent
     assert len(writer.buffer) >= 11
     packet = JdwpCommandPacket.parse(writer.buffer[:11], writer.buffer[11:])
@@ -259,14 +262,14 @@ async def test_jdwp_connection_full_flow() -> None:
     temp_writer = MockStreamWriter()
     reply_packet.serialize(temp_writer)  # type: ignore
     reader.feed_data(temp_writer.buffer)
-    
+
     # Wait for command response
     response = await task
     assert isinstance(response, IDSizesResponse)
     assert response.field_id_size == 4
     assert response.method_id_size == 4
     assert response.object_id_size == 8
-    
+
     # Verify Dynamic IDSizes Spec Replacement!
     assert conn.spec.field_id_struct.size == 4
     assert conn.spec.object_id_struct.size == 8
@@ -290,14 +293,13 @@ class MockNoResponseCommand(JdwpCommand[None]):
 @pytest.mark.asyncio
 async def test_jdwp_command_no_response() -> None:
     conn, reader, writer = create_mock_connection()
-    
+
     res = await conn.send_command(MockNoResponseCommand())
     assert res is None
-    
+
     assert len(writer.buffer) == 11
     packet = JdwpCommandPacket.parse(writer.buffer, b"")
     assert packet.command_set == 99
     assert packet.command == 98
-    
-    await conn.close()
 
+    await conn.close()

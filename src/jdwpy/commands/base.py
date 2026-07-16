@@ -5,9 +5,10 @@ from jdwpy.constants import JdwpErrorCode
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.spec import IdSizesSpec
 
+
 class JdwpResponse(ABC):
     """Abstract Base Class representing a JDWP Command Response payload."""
-    
+
     @classmethod
     @abstractmethod
     def deserialize(cls, reader: JdwpReader) -> Self:
@@ -34,9 +35,10 @@ class JdwpResponse(ABC):
 
 class JdwpCommand[T: JdwpResponse | None](ABC):
     """Abstract Base Class representing a JDWP Command payload."""
+
     COMMAND_SET: ClassVar[int]
     COMMAND: ClassVar[int]
-    
+
     # Restricts allowed error codes for validation checking.
     ALLOWED_ERRORS: ClassVar[frozenset[JdwpErrorCode]] = frozenset([JdwpErrorCode.NONE])
 

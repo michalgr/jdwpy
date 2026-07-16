@@ -6,25 +6,28 @@ HANDSHAKE = b"JDWP-Handshake"
 
 class JdwpTag(IntEnum):
     """JDWP Type Tag Signatures (usually ASCII character values)."""
-    ARRAY = 91          # '['
-    BYTE = 66           # 'B'
-    CHAR = 67           # 'C'
-    OBJECT = 76         # 'L'
-    FLOAT = 70          # 'F'
-    DOUBLE = 68         # 'D'
-    INT = 73            # 'I'
-    LONG = 74           # 'J'
-    SHORT = 83          # 'S'
-    VOID = 86           # 'V'
-    BOOLEAN = 90        # 'Z'
-    STRING = 115        # 's'
-    THREAD = 116        # 't'
+
+    ARRAY = 91  # '['
+    BYTE = 66  # 'B'
+    CHAR = 67  # 'C'
+    OBJECT = 76  # 'L'
+    FLOAT = 70  # 'F'
+    DOUBLE = 68  # 'D'
+    INT = 73  # 'I'
+    LONG = 74  # 'J'
+    SHORT = 83  # 'S'
+    VOID = 86  # 'V'
+    BOOLEAN = 90  # 'Z'
+    STRING = 115  # 's'
+    THREAD = 116  # 't'
     THREAD_GROUP = 103  # 'g'
     CLASS_LOADER = 108  # 'l'
-    CLASS_OBJECT = 99   # 'c'
+    CLASS_OBJECT = 99  # 'c'
+
 
 class JdwpErrorCode(IntEnum):
     """JDWP Error Codes mapped to their standard protocol definitions."""
+
     NONE = 0
     INVALID_THREAD = 10
     INVALID_THREAD_GROUP = 11
