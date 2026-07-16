@@ -5,7 +5,7 @@ from jdwpy.constants import JdwpErrorCode, HANDSHAKE
 from jdwpy.spec import IdSizesSpec
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
-from jdwpy.commands.registry import get_response_class
+from jdwpy.commands.registry import get_response_class, get_command_class
 from jdwpy.commands.vm import IDSizesResponse
 
 
@@ -208,6 +208,17 @@ class JdwpConnection:
             self.spec = IdSizesSpec.from_response(response)
 
         return response
+
+    async def read_command(self) -> JdwpCommand[Any]:
+        """Awaits and parses the next command packet received from the VM."""
+        packet = await self._packet_conn.event_queue.get()
+        cmd_cls = get_command_class(packet.command_set, packet.command)
+        if cmd_cls is None:
+            raise RuntimeError(
+                f"Unknown command received from VM: Set {packet.command_set}, Command {packet.command}"
+            )
+        cmd = cmd_cls.from_bytes(packet.data, self.spec)
+        return cmd
 
     async def close(self) -> None:
         """Closes the underlying packet connection."""

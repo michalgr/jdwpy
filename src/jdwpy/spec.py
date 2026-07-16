@@ -1,7 +1,8 @@
 from __future__ import annotations
 import struct
 from dataclasses import dataclass
-from typing import NewType, Self, TYPE_CHECKING
+from typing import NewType, Self, TYPE_CHECKING, Any
+from jdwpy.constants import JdwpTag
 
 if TYPE_CHECKING:
     from jdwpy.commands.vm import IDSizesResponse
@@ -22,6 +23,22 @@ class Location:
     class_id: ReferenceTypeID
     method_id: MethodID
     index: int
+
+
+@dataclass(frozen=True)
+class TaggedObjectID:
+    """Represents a JDWP object with its type tag."""
+
+    tag: JdwpTag
+    object_id: ObjectID
+
+
+@dataclass(frozen=True)
+class JdwpValue:
+    """Represents a typed JDWP value."""
+
+    tag: JdwpTag
+    value: Any
 
 
 _STRUCT_32 = struct.Struct(">I")

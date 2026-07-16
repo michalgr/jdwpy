@@ -11,6 +11,8 @@ from jdwpy.commands import (
     VersionResponse,
     IDSizesCommand,
     IDSizesResponse,
+    CompositeCommand,
+    VMStartEvent,
 )
 from jdwpy.connection import JdwpConnection
 from jdwpy.proxy import JdwpProxySession
@@ -62,6 +64,13 @@ def running_jvm_debuggee():
 
 async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
     """Sends JDWP version and IDSizes commands, verifying the responses and spec updates."""
+    # 0. Read startup VM_START composite event command
+    event = await conn.read_command()
+    assert isinstance(event, CompositeCommand)
+    assert len(event.events) == 1
+    assert isinstance(event.events[0], VMStartEvent)
+    assert event.events[0].thread > 0
+
     # 1. Send VersionCommand and verify response
     version = await conn.send_command(VersionCommand())
     assert isinstance(version, VersionResponse)

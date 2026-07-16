@@ -14,6 +14,8 @@ from jdwpy.spec import (
     MethodID,
     FrameID,
     Location,
+    TaggedObjectID,
+    JdwpValue,
 )
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
@@ -37,6 +39,8 @@ __all__ = [
     "MethodID",
     "FrameID",
     "Location",
+    "TaggedObjectID",
+    "JdwpValue",
     "JdwpPacket",
     "JdwpCommandPacket",
     "JdwpReplyPacket",
