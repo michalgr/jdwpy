@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 import pytest
 
+from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy
 from jdwpy.commands import (
     VersionCommand,
     VersionResponse,
@@ -13,6 +14,11 @@ from jdwpy.commands import (
     IDSizesResponse,
     CompositeCommand,
     VMStartEvent,
+    SetCommand,
+    SetResponse,
+    ClassMatchModifier,
+    ResumeCommand,
+    ClassPrepareEvent,
 )
 from jdwpy.connection import JdwpConnection
 from jdwpy.proxy import JdwpProxySession
@@ -91,6 +97,33 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
     assert conn.spec.field_id_struct.size == idsizes.field_id_size
     assert conn.spec.object_id_struct.size == idsizes.object_id_size
     assert conn.spec.method_id_struct.size == idsizes.method_id_size
+
+    # 4. Set a CLASS_PREPARE event request to monitor loading/preparation of SimpleApp
+    set_resp = await conn.send_command(
+        SetCommand(
+            event_kind=JdwpEventKind.CLASS_PREPARE,
+            suspend_policy=JdwpSuspendPolicy.ALL,
+            modifiers=[ClassMatchModifier(class_pattern="SimpleApp")]
+        )
+    )
+    assert isinstance(set_resp, SetResponse)
+    request_id = set_resp.request_id
+
+    # 5. Resume execution to trigger class preparation
+    await conn.send_command(ResumeCommand())
+
+    # 6. Read the Composite event and verify it is indeed ClassPrepareEvent for SimpleApp
+    event_cmd = await conn.read_command()
+    assert isinstance(event_cmd, CompositeCommand)
+    assert len(event_cmd.events) == 1
+    
+    class_prep = event_cmd.events[0]
+    assert isinstance(class_prep, ClassPrepareEvent)
+    assert class_prep.request_id == request_id
+    assert class_prep.signature == "LSimpleApp;"
+
+    # 7. Resume again so the target VM can finish execution
+    await conn.send_command(ResumeCommand())
 
 
 @pytest.mark.asyncio
