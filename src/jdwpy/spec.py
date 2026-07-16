@@ -18,6 +18,7 @@ ThreadGroupID = NewType("ThreadGroupID", int)
 StringID = NewType("StringID", int)
 ClassLoaderID = NewType("ClassLoaderID", int)
 ClassObjectID = NewType("ClassObjectID", int)
+InterfaceID = NewType("InterfaceID", int)
 
 
 @dataclass(frozen=True)

@@ -15,6 +15,9 @@ from jdwpy.spec import (
     ThreadID,
     ThreadGroupID,
     StringID,
+    ClassLoaderID,
+    ClassObjectID,
+    InterfaceID,
 )
 
 
@@ -84,6 +87,18 @@ class JdwpReader:
     def read_string_id(self) -> StringID:
         """Reads a variable-length string ID."""
         return StringID(self.read_object_id())
+
+    def read_class_loader_id(self) -> ClassLoaderID:
+        """Reads a variable-length class loader ID."""
+        return ClassLoaderID(self.read_object_id())
+
+    def read_class_object_id(self) -> ClassObjectID:
+        """Reads a variable-length class object ID."""
+        return ClassObjectID(self.read_object_id())
+
+    def read_interface_id(self) -> InterfaceID:
+        """Reads a variable-length interface ID."""
+        return InterfaceID(self.read_object_id())
 
     def read_reference_type_id(self) -> ReferenceTypeID:
         """Reads a variable-length reference type ID."""
@@ -222,6 +237,21 @@ class JdwpWriter:
 
     def write_string_id(self, val: StringID) -> Self:
         """Writes a variable-length string ID."""
+        self.write_object_id(ObjectID(val))
+        return self
+
+    def write_class_loader_id(self, val: ClassLoaderID) -> Self:
+        """Writes a variable-length class loader ID."""
+        self.write_object_id(ObjectID(val))
+        return self
+
+    def write_class_object_id(self, val: ClassObjectID) -> Self:
+        """Writes a variable-length class object ID."""
+        self.write_object_id(ObjectID(val))
+        return self
+
+    def write_interface_id(self, val: InterfaceID) -> Self:
+        """Writes a variable-length interface ID."""
         self.write_object_id(ObjectID(val))
         return self
 

@@ -12,6 +12,9 @@ from jdwpy.constants import (
     JdwpClassStatus,
 )
 from jdwpy.spec import (
+    ClassLoaderID,
+    ClassObjectID,
+    InterfaceID,
     FrameID,
     IdSizesSpec,
     ObjectID,
@@ -28,6 +31,47 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    SignatureCommand,
+    SignatureResponse,
+    ClassLoaderCommand,
+    ClassLoaderResponse,
+    ModifiersCommand,
+    ModifiersResponse,
+    FieldsCommand,
+    FieldsResponse,
+    FieldsEntry,
+    MethodsCommand,
+    MethodsResponse,
+    MethodsEntry,
+    RefTypeGetValuesCommand,
+    RefTypeGetValuesResponse,
+    SourceFileCommand,
+    SourceFileResponse,
+    NestedTypesCommand,
+    NestedTypesResponse,
+    NestedTypesEntry,
+    RefTypeStatusCommand,
+    RefTypeStatusResponse,
+    InterfacesCommand,
+    InterfacesResponse,
+    ClassObjectCommand,
+    ClassObjectResponse,
+    SourceDebugExtensionCommand,
+    SourceDebugExtensionResponse,
+    SignatureWithGenericCommand,
+    SignatureWithGenericResponse,
+    FieldsWithGenericCommand,
+    FieldsWithGenericResponse,
+    FieldsWithGenericEntry,
+    MethodsWithGenericCommand,
+    MethodsWithGenericResponse,
+    MethodsWithGenericEntry,
+    InstancesCommand,
+    InstancesResponse,
+    ClassFileVersionCommand,
+    ClassFileVersionResponse,
+    ConstantPoolCommand,
+    ConstantPoolResponse,
     GetValuesCommand,
     GetValuesResponse,
     GetValuesRequestSlot,
@@ -691,6 +735,197 @@ async def test_stack_frame_command_set() -> None:
     await assert_command_roundtrip(
         PopFramesCommand(thread=thread_id, frame=frame_id),
         PopFramesResponse(),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_reference_type_command_set() -> None:
+    """Verifies flow and serialization for commands in the ReferenceType Command Set (Set 2)."""
+    spec = IdSizesSpec.create()
+
+    ref_type = ReferenceTypeID(0x11223344)
+
+    # 1. Signature Command
+    await assert_command_roundtrip(
+        SignatureCommand(ref_type=ref_type),
+        SignatureResponse(signature="Ljava/lang/String;"),
+        spec=spec,
+    )
+
+    # 2. ClassLoader Command
+    await assert_command_roundtrip(
+        ClassLoaderCommand(ref_type=ref_type),
+        ClassLoaderResponse(class_loader=ClassLoaderID(0x55667788)),
+        spec=spec,
+    )
+
+    # 3. Modifiers Command
+    await assert_command_roundtrip(
+        ModifiersCommand(ref_type=ref_type),
+        ModifiersResponse(mod_bits=0x21),
+        spec=spec,
+    )
+
+    # 4. Fields Command
+    await assert_command_roundtrip(
+        FieldsCommand(ref_type=ref_type),
+        FieldsResponse(
+            fields=[
+                FieldsEntry(
+                    field_id=FieldID(0xAAAA),
+                    name="value",
+                    signature="[C",
+                    mod_bits=0x12,
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 5. Methods Command
+    await assert_command_roundtrip(
+        MethodsCommand(ref_type=ref_type),
+        MethodsResponse(
+            methods=[
+                MethodsEntry(
+                    method_id=MethodID(0xBBBB),
+                    name="indexOf",
+                    signature="(I)I",
+                    mod_bits=0x1,
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 6. RefTypeGetValues Command
+    await assert_command_roundtrip(
+        RefTypeGetValuesCommand(ref_type=ref_type, fields=[FieldID(0xAAAA)]),
+        RefTypeGetValuesResponse(values=[JdwpValue(tag=JdwpTag.INT, value=42)]),
+        spec=spec,
+    )
+
+    # 7. SourceFile Command
+    await assert_command_roundtrip(
+        SourceFileCommand(ref_type=ref_type),
+        SourceFileResponse(source_file="String.java"),
+        spec=spec,
+    )
+
+    # 8. NestedTypes Command
+    await assert_command_roundtrip(
+        NestedTypesCommand(ref_type=ref_type),
+        NestedTypesResponse(
+            nested_types=[
+                NestedTypesEntry(
+                    ref_type_tag=JdwpTypeTag.CLASS,
+                    type_id=ReferenceTypeID(0x22334455),
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 9. RefTypeStatus Command
+    await assert_command_roundtrip(
+        RefTypeStatusCommand(ref_type=ref_type),
+        RefTypeStatusResponse(
+            status=JdwpClassStatus.VERIFIED | JdwpClassStatus.PREPARED
+        ),
+        spec=spec,
+    )
+
+    # 10. Interfaces Command
+    await assert_command_roundtrip(
+        InterfacesCommand(ref_type=ref_type),
+        InterfacesResponse(interfaces=[InterfaceID(0x9999)]),
+        spec=spec,
+    )
+
+    # 11. ClassObject Command
+    await assert_command_roundtrip(
+        ClassObjectCommand(ref_type=ref_type),
+        ClassObjectResponse(class_object=ClassObjectID(0x8888)),
+        spec=spec,
+    )
+
+    # 12. SourceDebugExtension Command
+    await assert_command_roundtrip(
+        SourceDebugExtensionCommand(ref_type=ref_type),
+        SourceDebugExtensionResponse(extension="KotlinDebugExtension"),
+        spec=spec,
+    )
+
+    # 13. SignatureWithGeneric Command
+    await assert_command_roundtrip(
+        SignatureWithGenericCommand(ref_type=ref_type),
+        SignatureWithGenericResponse(
+            signature="Ljava/util/List;",
+            generic_signature="Ljava/util/List<TE;>;",
+        ),
+        spec=spec,
+    )
+
+    # 14. FieldsWithGeneric Command
+    await assert_command_roundtrip(
+        FieldsWithGenericCommand(ref_type=ref_type),
+        FieldsWithGenericResponse(
+            fields=[
+                FieldsWithGenericEntry(
+                    field_id=FieldID(0xCCCC),
+                    name="list",
+                    signature="Ljava/util/List;",
+                    generic_signature="Ljava/util/List<Ljava/lang/String;>;",
+                    mod_bits=0x2,
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 15. MethodsWithGeneric Command
+    await assert_command_roundtrip(
+        MethodsWithGenericCommand(ref_type=ref_type),
+        MethodsWithGenericResponse(
+            methods=[
+                MethodsWithGenericEntry(
+                    method_id=MethodID(0xDDDD),
+                    name="getList",
+                    signature="()Ljava/util/List;",
+                    generic_signature="()Ljava/util/List<Ljava/lang/String;>;",
+                    mod_bits=0x1,
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 16. Instances Command
+    await assert_command_roundtrip(
+        InstancesCommand(ref_type=ref_type, max_instances=5),
+        InstancesResponse(
+            instances=[
+                TaggedObjectID(
+                    tag=JdwpTag.OBJECT,
+                    object_id=ObjectID(0xEEFF),
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 17. ClassFileVersion Command
+    await assert_command_roundtrip(
+        ClassFileVersionCommand(ref_type=ref_type),
+        ClassFileVersionResponse(major_version=52, minor_version=0),
+        spec=spec,
+    )
+
+    # 18. ConstantPool Command
+    await assert_command_roundtrip(
+        ConstantPoolCommand(ref_type=ref_type),
+        ConstantPoolResponse(bytes=b"\xca\xfe\xba\xbe"),
         spec=spec,
     )
 
