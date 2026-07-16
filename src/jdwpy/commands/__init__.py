@@ -204,6 +204,14 @@ from jdwpy.commands.thread_reference import (
     ForceEarlyReturnCommand,
     ForceEarlyReturnResponse,
 )
+from jdwpy.commands.thread_group_reference import (
+    ThreadGroupRefNameCommand,
+    ThreadGroupRefNameResponse,
+    ParentCommand,
+    ParentResponse,
+    ChildrenCommand,
+    ChildrenResponse,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -384,6 +392,12 @@ __all__ = [
     "MonitorStackDepthInfoEntry",
     "ForceEarlyReturnCommand",
     "ForceEarlyReturnResponse",
+    "ThreadGroupRefNameCommand",
+    "ThreadGroupRefNameResponse",
+    "ParentCommand",
+    "ParentResponse",
+    "ChildrenCommand",
+    "ChildrenResponse",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",

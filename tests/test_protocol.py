@@ -38,6 +38,12 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    ThreadGroupRefNameCommand,
+    ThreadGroupRefNameResponse,
+    ParentCommand,
+    ParentResponse,
+    ChildrenCommand,
+    ChildrenResponse,
     ThreadRefNameCommand,
     ThreadRefNameResponse,
     ThreadRefSuspendCommand,
@@ -1431,6 +1437,38 @@ async def test_thread_reference_command_set() -> None:
             thread=thread, value=JdwpValue(tag=JdwpTag.INT, value=42)
         ),
         ForceEarlyReturnResponse(),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_thread_group_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the ThreadGroupReference Command Set (Set 12)."""
+    spec = IdSizesSpec.create()
+
+    group = ThreadGroupID(0x11223344)
+
+    # 1. Name Command
+    await assert_command_roundtrip(
+        ThreadGroupRefNameCommand(group=group),
+        ThreadGroupRefNameResponse(group_name="system"),
+        spec=spec,
+    )
+
+    # 2. Parent Command
+    await assert_command_roundtrip(
+        ParentCommand(group=group),
+        ParentResponse(parent_group=ThreadGroupID(0x55667788)),
+        spec=spec,
+    )
+
+    # 3. Children Command
+    await assert_command_roundtrip(
+        ChildrenCommand(group=group),
+        ChildrenResponse(
+            child_threads=[ThreadID(0xAAAA)],
+            child_groups=[ThreadGroupID(0xBBBB)],
+        ),
         spec=spec,
     )
 
