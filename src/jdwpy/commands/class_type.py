@@ -48,7 +48,7 @@ class SuperclassCommand(JdwpCommand[SuperclassResponse]):
 
 
 @dataclass
-class ClassTypeSetValuesRequestSlot:
+class SetValuesRequestSlot:
     field_id: FieldID
     value: JdwpValue
 
@@ -65,7 +65,7 @@ class ClassTypeSetValuesRequestSlot:
 
 
 @dataclass
-class ClassTypeSetValuesResponse(JdwpResponse):
+class SetValuesResponse(JdwpResponse):
     """Represents the response of ClassType.SetValues command."""
 
     @classmethod
@@ -76,16 +76,16 @@ class ClassTypeSetValuesResponse(JdwpResponse):
         pass
 
 
-@register_command(ClassTypeSetValuesResponse)
+@register_command(SetValuesResponse)
 @dataclass
-class ClassTypeSetValuesCommand(JdwpCommand[ClassTypeSetValuesResponse]):
+class SetValuesCommand(JdwpCommand[SetValuesResponse]):
     """JDWP Command Set 3, Command 2: ClassType.SetValues."""
 
     COMMAND_SET: ClassVar[int] = 3
     COMMAND: ClassVar[int] = 2
 
     clazz: ClassID
-    slots: list[ClassTypeSetValuesRequestSlot]
+    slots: list[SetValuesRequestSlot]
 
     def serialize(self, writer: JdwpWriter) -> None:
         writer.write_class_id(self.clazz)
@@ -97,12 +97,12 @@ class ClassTypeSetValuesCommand(JdwpCommand[ClassTypeSetValuesResponse]):
     def deserialize(cls, reader: JdwpReader) -> Self:
         clazz = reader.read_class_id()
         num = reader.read_int()
-        slots = [ClassTypeSetValuesRequestSlot.deserialize(reader) for _ in range(num)]
+        slots = [SetValuesRequestSlot.deserialize(reader) for _ in range(num)]
         return cls(clazz=clazz, slots=slots)
 
 
 @dataclass
-class ClassTypeInvokeMethodResponse(JdwpResponse):
+class InvokeMethodResponse(JdwpResponse):
     """Represents the response of ClassType.InvokeMethod command."""
 
     return_value: JdwpValue
@@ -120,9 +120,9 @@ class ClassTypeInvokeMethodResponse(JdwpResponse):
         writer.write_tagged_object(self.exception)
 
 
-@register_command(ClassTypeInvokeMethodResponse)
+@register_command(InvokeMethodResponse)
 @dataclass
-class ClassTypeInvokeMethodCommand(JdwpCommand[ClassTypeInvokeMethodResponse]):
+class InvokeMethodCommand(JdwpCommand[InvokeMethodResponse]):
     """JDWP Command Set 3, Command 3: ClassType.InvokeMethod."""
 
     COMMAND_SET: ClassVar[int] = 3

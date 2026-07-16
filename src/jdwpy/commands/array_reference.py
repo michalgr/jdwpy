@@ -36,7 +36,7 @@ class JdwpArrayRegion:
 
 
 @dataclass
-class ArrayRefLengthResponse(JdwpResponse):
+class LengthResponse(JdwpResponse):
     """Represents the response of ArrayReference.Length command."""
 
     array_length: int
@@ -49,9 +49,9 @@ class ArrayRefLengthResponse(JdwpResponse):
         writer.write_int(self.array_length)
 
 
-@register_command(ArrayRefLengthResponse)
+@register_command(LengthResponse)
 @dataclass
-class ArrayRefLengthCommand(JdwpCommand[ArrayRefLengthResponse]):
+class LengthCommand(JdwpCommand[LengthResponse]):
     """JDWP Command Set 13, Command 1: ArrayReference.Length."""
 
     COMMAND_SET: ClassVar[int] = 13
@@ -68,7 +68,7 @@ class ArrayRefLengthCommand(JdwpCommand[ArrayRefLengthResponse]):
 
 
 @dataclass
-class ArrayRefGetValuesResponse(JdwpResponse):
+class GetValuesResponse(JdwpResponse):
     """Represents the response of ArrayReference.GetValues command."""
 
     values: JdwpArrayRegion
@@ -81,9 +81,9 @@ class ArrayRefGetValuesResponse(JdwpResponse):
         self.values.serialize(writer)
 
 
-@register_command(ArrayRefGetValuesResponse)
+@register_command(GetValuesResponse)
 @dataclass
-class ArrayRefGetValuesCommand(JdwpCommand[ArrayRefGetValuesResponse]):
+class GetValuesCommand(JdwpCommand[GetValuesResponse]):
     """JDWP Command Set 13, Command 2: ArrayReference.GetValues."""
 
     COMMAND_SET: ClassVar[int] = 13
@@ -108,7 +108,7 @@ class ArrayRefGetValuesCommand(JdwpCommand[ArrayRefGetValuesResponse]):
 
 
 @dataclass
-class ArrayRefSetValuesResponse(JdwpResponse):
+class SetValuesResponse(JdwpResponse):
     """Represents the response of ArrayReference.SetValues command."""
 
     @classmethod
@@ -119,9 +119,9 @@ class ArrayRefSetValuesResponse(JdwpResponse):
         pass
 
 
-@register_command(ArrayRefSetValuesResponse)
+@register_command(SetValuesResponse)
 @dataclass
-class ArrayRefSetValuesCommand(JdwpCommand[ArrayRefSetValuesResponse]):
+class SetValuesCommand(JdwpCommand[SetValuesResponse]):
     """JDWP Command Set 13, Command 3: ArrayReference.SetValues.
 
     Note that JDWP SetValues request does not include the signature tag byte or tagged-values.

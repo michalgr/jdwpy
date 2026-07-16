@@ -8,7 +8,7 @@ from jdwpy.spec import ArrayTypeID, ArrayObjectID
 
 
 @dataclass
-class ArrayTypeNewInstanceResponse(JdwpResponse):
+class NewInstanceResponse(JdwpResponse):
     """Represents the response of ArrayType.NewInstance command."""
 
     new_array: ArrayObjectID
@@ -21,9 +21,9 @@ class ArrayTypeNewInstanceResponse(JdwpResponse):
         writer.write_array_object_id(self.new_array)
 
 
-@register_command(ArrayTypeNewInstanceResponse)
+@register_command(NewInstanceResponse)
 @dataclass
-class ArrayTypeNewInstanceCommand(JdwpCommand[ArrayTypeNewInstanceResponse]):
+class NewInstanceCommand(JdwpCommand[NewInstanceResponse]):
     """JDWP Command Set 4, Command 1: ArrayType.NewInstance."""
 
     COMMAND_SET: ClassVar[int] = 4

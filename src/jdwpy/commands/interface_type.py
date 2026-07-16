@@ -15,7 +15,7 @@ from jdwpy.constants import JdwpInvokeOptions
 
 
 @dataclass
-class InterfaceTypeInvokeMethodResponse(JdwpResponse):
+class InvokeMethodResponse(JdwpResponse):
     """Represents the response of InterfaceType.InvokeMethod command."""
 
     return_value: JdwpValue
@@ -33,9 +33,9 @@ class InterfaceTypeInvokeMethodResponse(JdwpResponse):
         writer.write_tagged_object(self.exception)
 
 
-@register_command(InterfaceTypeInvokeMethodResponse)
+@register_command(InvokeMethodResponse)
 @dataclass
-class InterfaceTypeInvokeMethodCommand(JdwpCommand[InterfaceTypeInvokeMethodResponse]):
+class InvokeMethodCommand(JdwpCommand[InvokeMethodResponse]):
     """JDWP Command Set 5, Command 1: InterfaceType.InvokeMethod."""
 
     COMMAND_SET: ClassVar[int] = 5

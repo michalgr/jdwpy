@@ -18,7 +18,7 @@ from jdwpy.constants import JdwpTypeTag, JdwpInvokeOptions
 
 
 @dataclass
-class ObjectRefReferenceTypeResponse(JdwpResponse):
+class ReferenceTypeResponse(JdwpResponse):
     """Represents the response of ObjectReference.ReferenceType command."""
 
     ref_type_tag: JdwpTypeTag
@@ -36,9 +36,9 @@ class ObjectRefReferenceTypeResponse(JdwpResponse):
         writer.write_reference_type_id(self.type_id)
 
 
-@register_command(ObjectRefReferenceTypeResponse)
+@register_command(ReferenceTypeResponse)
 @dataclass
-class ObjectRefReferenceTypeCommand(JdwpCommand[ObjectRefReferenceTypeResponse]):
+class ReferenceTypeCommand(JdwpCommand[ReferenceTypeResponse]):
     """JDWP Command Set 9, Command 1: ObjectReference.ReferenceType."""
 
     COMMAND_SET: ClassVar[int] = 9
@@ -55,7 +55,7 @@ class ObjectRefReferenceTypeCommand(JdwpCommand[ObjectRefReferenceTypeResponse])
 
 
 @dataclass
-class ObjectRefGetValuesResponse(JdwpResponse):
+class GetValuesResponse(JdwpResponse):
     """Represents the response of ObjectReference.GetValues command."""
 
     values: list[JdwpValue]
@@ -72,9 +72,9 @@ class ObjectRefGetValuesResponse(JdwpResponse):
             writer.write_value(v)
 
 
-@register_command(ObjectRefGetValuesResponse)
+@register_command(GetValuesResponse)
 @dataclass
-class ObjectRefGetValuesCommand(JdwpCommand[ObjectRefGetValuesResponse]):
+class GetValuesCommand(JdwpCommand[GetValuesResponse]):
     """JDWP Command Set 9, Command 2: ObjectReference.GetValues."""
 
     COMMAND_SET: ClassVar[int] = 9
@@ -98,7 +98,7 @@ class ObjectRefGetValuesCommand(JdwpCommand[ObjectRefGetValuesResponse]):
 
 
 @dataclass
-class ObjectRefSetValuesRequestSlot:
+class SetValuesRequestSlot:
     field_id: FieldID
     value: JdwpValue
 
@@ -115,7 +115,7 @@ class ObjectRefSetValuesRequestSlot:
 
 
 @dataclass
-class ObjectRefSetValuesResponse(JdwpResponse):
+class SetValuesResponse(JdwpResponse):
     """Represents the response of ObjectReference.SetValues command."""
 
     @classmethod
@@ -126,16 +126,16 @@ class ObjectRefSetValuesResponse(JdwpResponse):
         pass
 
 
-@register_command(ObjectRefSetValuesResponse)
+@register_command(SetValuesResponse)
 @dataclass
-class ObjectRefSetValuesCommand(JdwpCommand[ObjectRefSetValuesResponse]):
+class SetValuesCommand(JdwpCommand[SetValuesResponse]):
     """JDWP Command Set 9, Command 3: ObjectReference.SetValues."""
 
     COMMAND_SET: ClassVar[int] = 9
     COMMAND: ClassVar[int] = 3
 
     object: ObjectID
-    slots: list[ObjectRefSetValuesRequestSlot]
+    slots: list[SetValuesRequestSlot]
 
     def serialize(self, writer: JdwpWriter) -> None:
         writer.write_object_id(self.object)
@@ -147,7 +147,7 @@ class ObjectRefSetValuesCommand(JdwpCommand[ObjectRefSetValuesResponse]):
     def deserialize(cls, reader: JdwpReader) -> Self:
         object = reader.read_object_id()
         num = reader.read_int()
-        slots = [ObjectRefSetValuesRequestSlot.deserialize(reader) for _ in range(num)]
+        slots = [SetValuesRequestSlot.deserialize(reader) for _ in range(num)]
         return cls(object=object, slots=slots)
 
 
@@ -194,7 +194,7 @@ class MonitorInfoCommand(JdwpCommand[MonitorInfoResponse]):
 
 
 @dataclass
-class ObjectRefInvokeMethodResponse(JdwpResponse):
+class InvokeMethodResponse(JdwpResponse):
     """Represents the response of ObjectReference.InvokeMethod command."""
 
     return_value: JdwpValue
@@ -212,9 +212,9 @@ class ObjectRefInvokeMethodResponse(JdwpResponse):
         writer.write_tagged_object(self.exception)
 
 
-@register_command(ObjectRefInvokeMethodResponse)
+@register_command(InvokeMethodResponse)
 @dataclass
-class ObjectRefInvokeMethodCommand(JdwpCommand[ObjectRefInvokeMethodResponse]):
+class InvokeMethodCommand(JdwpCommand[InvokeMethodResponse]):
     """JDWP Command Set 9, Command 6: ObjectReference.InvokeMethod."""
 
     COMMAND_SET: ClassVar[int] = 9

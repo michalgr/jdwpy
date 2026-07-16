@@ -37,243 +37,7 @@ from jdwpy.spec import (
 )
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
-from jdwpy.commands import (
-    VisibleClassesCommand,
-    VisibleClassesResponse,
-    VisibleClassesEntry,
-    ArrayRefLengthCommand,
-    ArrayRefLengthResponse,
-    ArrayRefGetValuesCommand,
-    ArrayRefGetValuesResponse,
-    ArrayRefSetValuesCommand,
-    ArrayRefSetValuesResponse,
-    JdwpArrayRegion,
-    ThreadGroupRefNameCommand,
-    ThreadGroupRefNameResponse,
-    ParentCommand,
-    ParentResponse,
-    ChildrenCommand,
-    ChildrenResponse,
-    ThreadRefNameCommand,
-    ThreadRefNameResponse,
-    ThreadRefSuspendCommand,
-    ThreadRefSuspendResponse,
-    ThreadRefResumeCommand,
-    ThreadRefResumeResponse,
-    ThreadRefStatusCommand,
-    ThreadRefStatusResponse,
-    ThreadGroupCommand,
-    ThreadGroupResponse,
-    FramesCommand,
-    FramesResponse,
-    FramesEntry,
-    FrameCountCommand,
-    FrameCountResponse,
-    OwnedMonitorsCommand,
-    OwnedMonitorsResponse,
-    CurrentContendedMonitorCommand,
-    CurrentContendedMonitorResponse,
-    StopCommand,
-    StopResponse,
-    InterruptCommand,
-    InterruptResponse,
-    SuspendCountCommand,
-    SuspendCountResponse,
-    OwnedMonitorsStackDepthInfoCommand,
-    OwnedMonitorsStackDepthInfoResponse,
-    MonitorStackDepthInfoEntry,
-    ForceEarlyReturnCommand,
-    ForceEarlyReturnResponse,
-    StringReferenceValueCommand,
-    StringReferenceValueResponse,
-    ObjectRefReferenceTypeCommand,
-    ObjectRefReferenceTypeResponse,
-    ObjectRefGetValuesCommand,
-    ObjectRefGetValuesResponse,
-    ObjectRefSetValuesCommand,
-    ObjectRefSetValuesResponse,
-    ObjectRefSetValuesRequestSlot,
-    MonitorInfoCommand,
-    MonitorInfoResponse,
-    ObjectRefInvokeMethodCommand,
-    ObjectRefInvokeMethodResponse,
-    DisableCollectionCommand,
-    DisableCollectionResponse,
-    EnableCollectionCommand,
-    EnableCollectionResponse,
-    IsCollectedCommand,
-    IsCollectedResponse,
-    ReferringObjectsCommand,
-    ReferringObjectsResponse,
-    LineTableCommand,
-    LineTableResponse,
-    LineTableEntry,
-    VariableTableCommand,
-    VariableTableResponse,
-    VariableTableEntry,
-    BytecodesCommand,
-    BytecodesResponse,
-    IsObsoleteCommand,
-    IsObsoleteResponse,
-    VariableTableWithGenericCommand,
-    VariableTableWithGenericResponse,
-    VariableTableWithGenericEntry,
-    InterfaceTypeInvokeMethodCommand,
-    InterfaceTypeInvokeMethodResponse,
-    ArrayTypeNewInstanceCommand,
-    ArrayTypeNewInstanceResponse,
-    SuperclassCommand,
-    SuperclassResponse,
-    ClassTypeSetValuesCommand,
-    ClassTypeSetValuesResponse,
-    ClassTypeSetValuesRequestSlot,
-    ClassTypeInvokeMethodCommand,
-    ClassTypeInvokeMethodResponse,
-    NewInstanceCommand,
-    NewInstanceResponse,
-    SignatureCommand,
-    SignatureResponse,
-    ClassLoaderCommand,
-    ClassLoaderResponse,
-    ModifiersCommand,
-    ModifiersResponse,
-    FieldsCommand,
-    FieldsResponse,
-    FieldsEntry,
-    MethodsCommand,
-    MethodsResponse,
-    MethodsEntry,
-    RefTypeGetValuesCommand,
-    RefTypeGetValuesResponse,
-    SourceFileCommand,
-    SourceFileResponse,
-    NestedTypesCommand,
-    NestedTypesResponse,
-    NestedTypesEntry,
-    RefTypeStatusCommand,
-    RefTypeStatusResponse,
-    InterfacesCommand,
-    InterfacesResponse,
-    ClassObjectCommand,
-    ClassObjectResponse,
-    SourceDebugExtensionCommand,
-    SourceDebugExtensionResponse,
-    SignatureWithGenericCommand,
-    SignatureWithGenericResponse,
-    FieldsWithGenericCommand,
-    FieldsWithGenericResponse,
-    FieldsWithGenericEntry,
-    MethodsWithGenericCommand,
-    MethodsWithGenericResponse,
-    MethodsWithGenericEntry,
-    InstancesCommand,
-    InstancesResponse,
-    ClassFileVersionCommand,
-    ClassFileVersionResponse,
-    ConstantPoolCommand,
-    ConstantPoolResponse,
-    GetValuesCommand,
-    GetValuesResponse,
-    GetValuesRequestSlot,
-    SetValuesCommand,
-    SetValuesResponse,
-    SetValuesRequestSlot,
-    ThisObjectCommand,
-    ThisObjectResponse,
-    PopFramesCommand,
-    PopFramesResponse,
-    ReflectedTypeCommand,
-    ReflectedTypeResponse,
-    get_command_class,
-    get_response_class,
-    register_command,
-    VersionCommand,
-    VersionResponse,
-    IDSizesCommand,
-    IDSizesResponse,
-    JdwpCommand,
-    JdwpResponse,
-    SetCommand,
-    SetResponse,
-    ClearCommand,
-    ClearResponse,
-    ClearAllBreakpointsCommand,
-    ClearAllBreakpointsResponse,
-    CountModifier,
-    ConditionalModifier,
-    ThreadOnlyModifier,
-    ClassOnlyModifier,
-    ClassMatchModifier,
-    ClassExcludeModifier,
-    LocationOnlyModifier,
-    ExceptionOnlyModifier,
-    FieldOnlyModifier,
-    StepModifier,
-    InstanceOnlyModifier,
-    PlatformThreadsOnlyModifier,
-    CompositeCommand,
-    VMStartEvent,
-    SingleStepEvent,
-    BreakpointEvent,
-    MethodEntryEvent,
-    MethodExitEvent,
-    MethodExitWithReturnValueEvent,
-    MonitorContendedEnterEvent,
-    ClassesBySignatureCommand,
-    ClassesBySignatureResponse,
-    ClassesBySignatureEntry,
-    AllClassesCommand,
-    AllClassesResponse,
-    AllClassesEntry,
-    AllThreadsCommand,
-    AllThreadsResponse,
-    TopLevelThreadGroupsCommand,
-    TopLevelThreadGroupsResponse,
-    DisposeCommand,
-    DisposeResponse,
-    SuspendCommand,
-    SuspendResponse,
-    ResumeCommand,
-    ResumeResponse,
-    ExitCommand,
-    ExitResponse,
-    CreateStringCommand,
-    CreateStringResponse,
-    CapabilitiesCommand,
-    CapabilitiesResponse,
-    ClassPathsCommand,
-    ClassPathsResponse,
-    DisposeObjectsCommand,
-    DisposeObjectsResponse,
-    DisposeObjectsRequest,
-    HoldEventsCommand,
-    HoldEventsResponse,
-    ReleaseEventsCommand,
-    ReleaseEventsResponse,
-    CapabilitiesNewCommand,
-    CapabilitiesNewResponse,
-    RedefineClassesCommand,
-    RedefineClassesResponse,
-    RedefineClassesRequest,
-    SetDefaultStratumCommand,
-    SetDefaultStratumResponse,
-    AllClassesWithGenericCommand,
-    AllClassesWithGenericResponse,
-    AllClassesWithGenericEntry,
-    InstanceCountsCommand,
-    InstanceCountsResponse,
-    MonitorContendedEnteredEvent,
-    MonitorWaitEvent,
-    MonitorWaitedEvent,
-    ExceptionEvent,
-    ThreadStartEvent,
-    ThreadDeathEvent,
-    ClassPrepareEvent,
-    ClassUnloadEvent,
-    FieldAccessEvent,
-    FieldModificationEvent,
-    VMDeathEvent,
-)
+from jdwpy import commands
 
 from jdwpy.connection import (
     JdwpConnection,
@@ -335,8 +99,8 @@ def feed_reply(reader: asyncio.StreamReader, packet_id: int, payload: bytes) -> 
     reader.feed_data(reply.to_bytes())
 
 
-async def assert_command_roundtrip[T: JdwpResponse | None](
-    command: JdwpCommand[T],
+async def assert_command_roundtrip[T: commands.JdwpResponse | None](
+    command: commands.JdwpCommand[T],
     expected_response: T,
     spec: IdSizesSpec | None = None,
 ) -> None:
@@ -360,7 +124,7 @@ async def assert_command_roundtrip[T: JdwpResponse | None](
         assert deserialized_command == command
 
         # 3. If a response is expected, serialize expected_response to feed mock reply
-        response_class = get_response_class(command.__class__)
+        response_class = commands.get_response_class(command.__class__)
         assert (response_class is None) == (expected_response is None)
 
         if response_class is not None:
@@ -373,8 +137,8 @@ async def assert_command_roundtrip[T: JdwpResponse | None](
         # Verify the returned response equals expected_response
         assert response == expected_response
 
-        # Verify dynamic spec updates when IDSizesResponse is received
-        if isinstance(response, IDSizesResponse):
+        # Verify dynamic spec updates when commands.vm.IDSizesResponse is received
+        if isinstance(response, commands.vm.IDSizesResponse):
             assert conn.spec.field_id_struct.size == response.field_id_size
             assert conn.spec.object_id_struct.size == response.object_id_size
             assert conn.spec.method_id_struct.size == response.method_id_size
@@ -505,10 +269,10 @@ async def test_packet_stream_serialization() -> None:
 
 def test_command_registry_indexing() -> None:
     """Verifies that concrete commands are successfully indexed in the registry."""
-    assert get_command_class(1, 1) is VersionCommand
-    assert get_command_class(1, 7) is IDSizesCommand
-    assert get_command_class(99, 98) is MockNoResponseCommand
-    assert get_command_class(99, 99) is None
+    assert commands.get_command_class(1, 1) is commands.vm.VersionCommand
+    assert commands.get_command_class(1, 7) is commands.vm.IDSizesCommand
+    assert commands.get_command_class(99, 98) is MockNoResponseCommand
+    assert commands.get_command_class(99, 99) is None
 
 
 @pytest.mark.asyncio
@@ -517,29 +281,31 @@ async def test_virtual_machine_command_set() -> None:
     spec = IdSizesSpec.create()
 
     # 1. Version Command
-    resp_version = VersionResponse(
+    resp_version = commands.vm.VersionResponse(
         description="JVM 14.0",
         jdwp_major=1,
         jdwp_minor=6,
         vm_version="14.0.1",
         vm_name="OpenJDK",
     )
-    await assert_command_roundtrip(VersionCommand(), resp_version, spec=spec)
+    await assert_command_roundtrip(
+        commands.vm.VersionCommand(), resp_version, spec=spec
+    )
 
     # 2. IDSizes Command & spec update verification
-    resp_ids = IDSizesResponse(
+    resp_ids = commands.vm.IDSizesResponse(
         field_id_size=4,
         method_id_size=4,
         object_id_size=8,
         reference_type_id_size=8,
         frame_id_size=8,
     )
-    await assert_command_roundtrip(IDSizesCommand(), resp_ids, spec=spec)
+    await assert_command_roundtrip(commands.vm.IDSizesCommand(), resp_ids, spec=spec)
 
     # 3. ClassesBySignature Command
-    classes_by_sig_resp = ClassesBySignatureResponse(
+    classes_by_sig_resp = commands.vm.ClassesBySignatureResponse(
         classes=[
-            ClassesBySignatureEntry(
+            commands.vm.ClassesBySignatureEntry(
                 ref_type_tag=JdwpTypeTag.CLASS,
                 type_id=ReferenceTypeID(42),
                 status=JdwpClassStatus.VERIFIED,
@@ -547,15 +313,15 @@ async def test_virtual_machine_command_set() -> None:
         ]
     )
     await assert_command_roundtrip(
-        ClassesBySignatureCommand(signature="Ljava/lang/String;"),
+        commands.vm.ClassesBySignatureCommand(signature="Ljava/lang/String;"),
         classes_by_sig_resp,
         spec=spec,
     )
 
     # 4. AllClasses Command
-    all_classes_resp = AllClassesResponse(
+    all_classes_resp = commands.vm.AllClassesResponse(
         classes=[
-            AllClassesEntry(
+            commands.vm.AllClassesEntry(
                 ref_type_tag=JdwpTypeTag.CLASS,
                 type_id=ReferenceTypeID(42),
                 signature="Ljava/lang/String;",
@@ -564,64 +330,68 @@ async def test_virtual_machine_command_set() -> None:
         ]
     )
     await assert_command_roundtrip(
-        AllClassesCommand(),
+        commands.vm.AllClassesCommand(),
         all_classes_resp,
         spec=spec,
     )
 
     # 5. AllThreads Command
-    all_threads_resp = AllThreadsResponse(threads=[ThreadID(42), ThreadID(43)])
+    all_threads_resp = commands.vm.AllThreadsResponse(
+        threads=[ThreadID(42), ThreadID(43)]
+    )
     await assert_command_roundtrip(
-        AllThreadsCommand(),
+        commands.vm.AllThreadsCommand(),
         all_threads_resp,
         spec=spec,
     )
 
     # 6. TopLevelThreadGroups Command
-    top_level_groups_resp = TopLevelThreadGroupsResponse(groups=[ThreadGroupID(44)])
+    top_level_groups_resp = commands.vm.TopLevelThreadGroupsResponse(
+        groups=[ThreadGroupID(44)]
+    )
     await assert_command_roundtrip(
-        TopLevelThreadGroupsCommand(),
+        commands.vm.TopLevelThreadGroupsCommand(),
         top_level_groups_resp,
         spec=spec,
     )
 
     # 7. Dispose Command
     await assert_command_roundtrip(
-        DisposeCommand(),
-        DisposeResponse(),
+        commands.vm.DisposeCommand(),
+        commands.vm.DisposeResponse(),
         spec=spec,
     )
 
     # 8. Suspend Command
     await assert_command_roundtrip(
-        SuspendCommand(),
-        SuspendResponse(),
+        commands.vm.SuspendCommand(),
+        commands.vm.SuspendResponse(),
         spec=spec,
     )
 
     # 9. Resume Command
     await assert_command_roundtrip(
-        ResumeCommand(),
-        ResumeResponse(),
+        commands.vm.ResumeCommand(),
+        commands.vm.ResumeResponse(),
         spec=spec,
     )
 
     # 10. Exit Command
     await assert_command_roundtrip(
-        ExitCommand(exit_code=42),
-        ExitResponse(),
+        commands.vm.ExitCommand(exit_code=42),
+        commands.vm.ExitResponse(),
         spec=spec,
     )
 
     # 11. CreateString Command
     await assert_command_roundtrip(
-        CreateStringCommand(utf="hello"),
-        CreateStringResponse(string_object=StringID(45)),
+        commands.vm.CreateStringCommand(utf="hello"),
+        commands.vm.CreateStringResponse(string_object=StringID(45)),
         spec=spec,
     )
 
     # 12. Capabilities Command
-    caps_resp = CapabilitiesResponse(
+    caps_resp = commands.vm.CapabilitiesResponse(
         can_watch_field_modification=True,
         can_watch_field_access=True,
         can_get_bytecodes=True,
@@ -631,48 +401,50 @@ async def test_virtual_machine_command_set() -> None:
         can_get_monitor_info=True,
     )
     await assert_command_roundtrip(
-        CapabilitiesCommand(),
+        commands.vm.CapabilitiesCommand(),
         caps_resp,
         spec=spec,
     )
 
     # 13. ClassPaths Command
-    class_paths_resp = ClassPathsResponse(
+    class_paths_resp = commands.vm.ClassPathsResponse(
         base_dir="/base",
         classpaths=["/cp1"],
         bootclasspaths=["/bcp1"],
     )
     await assert_command_roundtrip(
-        ClassPathsCommand(),
+        commands.vm.ClassPathsCommand(),
         class_paths_resp,
         spec=spec,
     )
 
     # 14. DisposeObjects Command
     await assert_command_roundtrip(
-        DisposeObjectsCommand(
-            requests=[DisposeObjectsRequest(object_id=ObjectID(46), ref_cnt=2)]
+        commands.vm.DisposeObjectsCommand(
+            requests=[
+                commands.vm.DisposeObjectsRequest(object_id=ObjectID(46), ref_cnt=2)
+            ]
         ),
-        DisposeObjectsResponse(),
+        commands.vm.DisposeObjectsResponse(),
         spec=spec,
     )
 
     # 15. HoldEvents Command
     await assert_command_roundtrip(
-        HoldEventsCommand(),
-        HoldEventsResponse(),
+        commands.vm.HoldEventsCommand(),
+        commands.vm.HoldEventsResponse(),
         spec=spec,
     )
 
     # 16. ReleaseEvents Command
     await assert_command_roundtrip(
-        ReleaseEventsCommand(),
-        ReleaseEventsResponse(),
+        commands.vm.ReleaseEventsCommand(),
+        commands.vm.ReleaseEventsResponse(),
         spec=spec,
     )
 
     # 17. CapabilitiesNew Command
-    caps_new_resp = CapabilitiesNewResponse(
+    caps_new_resp = commands.vm.CapabilitiesNewResponse(
         can_watch_field_modification=True,
         can_watch_field_access=True,
         can_get_bytecodes=True,
@@ -707,36 +479,36 @@ async def test_virtual_machine_command_set() -> None:
         reserved32=False,
     )
     await assert_command_roundtrip(
-        CapabilitiesNewCommand(),
+        commands.vm.CapabilitiesNewCommand(),
         caps_new_resp,
         spec=spec,
     )
 
     # 18. RedefineClasses Command
     await assert_command_roundtrip(
-        RedefineClassesCommand(
+        commands.vm.RedefineClassesCommand(
             classes=[
-                RedefineClassesRequest(
+                commands.vm.RedefineClassesRequest(
                     ref_type=ReferenceTypeID(47),
                     class_bytes=b"\xca\xfe\xba\xbe",
                 )
             ]
         ),
-        RedefineClassesResponse(),
+        commands.vm.RedefineClassesResponse(),
         spec=spec,
     )
 
     # 19. SetDefaultStratum Command
     await assert_command_roundtrip(
-        SetDefaultStratumCommand(stratum_id="Java"),
-        SetDefaultStratumResponse(),
+        commands.vm.SetDefaultStratumCommand(stratum_id="Java"),
+        commands.vm.SetDefaultStratumResponse(),
         spec=spec,
     )
 
     # 20. AllClassesWithGeneric Command
-    all_classes_generic_resp = AllClassesWithGenericResponse(
+    all_classes_generic_resp = commands.vm.AllClassesWithGenericResponse(
         classes=[
-            AllClassesWithGenericEntry(
+            commands.vm.AllClassesWithGenericEntry(
                 ref_type_tag=JdwpTypeTag.CLASS,
                 type_id=ReferenceTypeID(48),
                 signature="Ljava/util/List;",
@@ -746,15 +518,15 @@ async def test_virtual_machine_command_set() -> None:
         ]
     )
     await assert_command_roundtrip(
-        AllClassesWithGenericCommand(),
+        commands.vm.AllClassesWithGenericCommand(),
         all_classes_generic_resp,
         spec=spec,
     )
 
     # 21. InstanceCounts Command
     await assert_command_roundtrip(
-        InstanceCountsCommand(ref_types=[ReferenceTypeID(49)]),
-        InstanceCountsResponse(counts=[100]),
+        commands.vm.InstanceCountsCommand(ref_types=[ReferenceTypeID(49)]),
+        commands.vm.InstanceCountsResponse(counts=[100]),
         spec=spec,
     )
 
@@ -766,8 +538,10 @@ async def test_class_object_reference_command_set() -> None:
 
     # 1. ReflectedType Command
     await assert_command_roundtrip(
-        ReflectedTypeCommand(class_object=ObjectID(0x11223344)),
-        ReflectedTypeResponse(
+        commands.class_object_reference.ReflectedTypeCommand(
+            class_object=ObjectID(0x11223344)
+        ),
+        commands.class_object_reference.ReflectedTypeResponse(
             ref_type_tag=JdwpTypeTag.CLASS, type_id=ReferenceTypeID(0x55667788)
         ),
         spec=spec,
@@ -784,15 +558,17 @@ async def test_stack_frame_command_set() -> None:
 
     # 1. GetValues Command
     await assert_command_roundtrip(
-        GetValuesCommand(
+        commands.stack_frame.GetValuesCommand(
             thread=thread_id,
             frame=frame_id,
             slots=[
-                GetValuesRequestSlot(slot=0, sig_byte=JdwpTag.INT),
-                GetValuesRequestSlot(slot=1, sig_byte=JdwpTag.OBJECT),
+                commands.stack_frame.GetValuesRequestSlot(slot=0, sig_byte=JdwpTag.INT),
+                commands.stack_frame.GetValuesRequestSlot(
+                    slot=1, sig_byte=JdwpTag.OBJECT
+                ),
             ],
         ),
-        GetValuesResponse(
+        commands.stack_frame.GetValuesResponse(
             values=[
                 JdwpValue(tag=JdwpTag.INT, value=42),
                 JdwpValue(tag=JdwpTag.OBJECT, value=ObjectID(0xDEADBEEF)),
@@ -803,27 +579,27 @@ async def test_stack_frame_command_set() -> None:
 
     # 2. SetValues Command
     await assert_command_roundtrip(
-        SetValuesCommand(
+        commands.stack_frame.SetValuesCommand(
             thread=thread_id,
             frame=frame_id,
             slots=[
-                SetValuesRequestSlot(
+                commands.stack_frame.SetValuesRequestSlot(
                     slot=0, value=JdwpValue(tag=JdwpTag.INT, value=42)
                 ),
-                SetValuesRequestSlot(
+                commands.stack_frame.SetValuesRequestSlot(
                     slot=1,
                     value=JdwpValue(tag=JdwpTag.OBJECT, value=ObjectID(0xDEADBEEF)),
                 ),
             ],
         ),
-        SetValuesResponse(),
+        commands.stack_frame.SetValuesResponse(),
         spec=spec,
     )
 
     # 3. ThisObject Command
     await assert_command_roundtrip(
-        ThisObjectCommand(thread=thread_id, frame=frame_id),
-        ThisObjectResponse(
+        commands.stack_frame.ThisObjectCommand(thread=thread_id, frame=frame_id),
+        commands.stack_frame.ThisObjectResponse(
             this_object=TaggedObjectID(
                 tag=JdwpTag.OBJECT, object_id=ObjectID(0xFEEDFACE)
             )
@@ -833,8 +609,8 @@ async def test_stack_frame_command_set() -> None:
 
     # 4. PopFrames Command
     await assert_command_roundtrip(
-        PopFramesCommand(thread=thread_id, frame=frame_id),
-        PopFramesResponse(),
+        commands.stack_frame.PopFramesCommand(thread=thread_id, frame=frame_id),
+        commands.stack_frame.PopFramesResponse(),
         spec=spec,
     )
 
@@ -848,31 +624,33 @@ async def test_reference_type_command_set() -> None:
 
     # 1. Signature Command
     await assert_command_roundtrip(
-        SignatureCommand(ref_type=ref_type),
-        SignatureResponse(signature="Ljava/lang/String;"),
+        commands.reference_type.SignatureCommand(ref_type=ref_type),
+        commands.reference_type.SignatureResponse(signature="Ljava/lang/String;"),
         spec=spec,
     )
 
     # 2. ClassLoader Command
     await assert_command_roundtrip(
-        ClassLoaderCommand(ref_type=ref_type),
-        ClassLoaderResponse(class_loader=ClassLoaderID(0x55667788)),
+        commands.reference_type.ClassLoaderCommand(ref_type=ref_type),
+        commands.reference_type.ClassLoaderResponse(
+            class_loader=ClassLoaderID(0x55667788)
+        ),
         spec=spec,
     )
 
     # 3. Modifiers Command
     await assert_command_roundtrip(
-        ModifiersCommand(ref_type=ref_type),
-        ModifiersResponse(mod_bits=0x21),
+        commands.reference_type.ModifiersCommand(ref_type=ref_type),
+        commands.reference_type.ModifiersResponse(mod_bits=0x21),
         spec=spec,
     )
 
     # 4. Fields Command
     await assert_command_roundtrip(
-        FieldsCommand(ref_type=ref_type),
-        FieldsResponse(
+        commands.reference_type.FieldsCommand(ref_type=ref_type),
+        commands.reference_type.FieldsResponse(
             fields=[
-                FieldsEntry(
+                commands.reference_type.FieldsEntry(
                     field_id=FieldID(0xAAAA),
                     name="value",
                     signature="[C",
@@ -885,10 +663,10 @@ async def test_reference_type_command_set() -> None:
 
     # 5. Methods Command
     await assert_command_roundtrip(
-        MethodsCommand(ref_type=ref_type),
-        MethodsResponse(
+        commands.reference_type.MethodsCommand(ref_type=ref_type),
+        commands.reference_type.MethodsResponse(
             methods=[
-                MethodsEntry(
+                commands.reference_type.MethodsEntry(
                     method_id=MethodID(0xBBBB),
                     name="indexOf",
                     signature="(I)I",
@@ -901,24 +679,28 @@ async def test_reference_type_command_set() -> None:
 
     # 6. RefTypeGetValues Command
     await assert_command_roundtrip(
-        RefTypeGetValuesCommand(ref_type=ref_type, fields=[FieldID(0xAAAA)]),
-        RefTypeGetValuesResponse(values=[JdwpValue(tag=JdwpTag.INT, value=42)]),
+        commands.reference_type.GetValuesCommand(
+            ref_type=ref_type, fields=[FieldID(0xAAAA)]
+        ),
+        commands.reference_type.GetValuesResponse(
+            values=[JdwpValue(tag=JdwpTag.INT, value=42)]
+        ),
         spec=spec,
     )
 
     # 7. SourceFile Command
     await assert_command_roundtrip(
-        SourceFileCommand(ref_type=ref_type),
-        SourceFileResponse(source_file="String.java"),
+        commands.reference_type.SourceFileCommand(ref_type=ref_type),
+        commands.reference_type.SourceFileResponse(source_file="String.java"),
         spec=spec,
     )
 
     # 8. NestedTypes Command
     await assert_command_roundtrip(
-        NestedTypesCommand(ref_type=ref_type),
-        NestedTypesResponse(
+        commands.reference_type.NestedTypesCommand(ref_type=ref_type),
+        commands.reference_type.NestedTypesResponse(
             nested_types=[
-                NestedTypesEntry(
+                commands.reference_type.NestedTypesEntry(
                     ref_type_tag=JdwpTypeTag.CLASS,
                     type_id=ReferenceTypeID(0x22334455),
                 )
@@ -929,8 +711,8 @@ async def test_reference_type_command_set() -> None:
 
     # 9. RefTypeStatus Command
     await assert_command_roundtrip(
-        RefTypeStatusCommand(ref_type=ref_type),
-        RefTypeStatusResponse(
+        commands.reference_type.StatusCommand(ref_type=ref_type),
+        commands.reference_type.StatusResponse(
             status=JdwpClassStatus.VERIFIED | JdwpClassStatus.PREPARED
         ),
         spec=spec,
@@ -938,29 +720,31 @@ async def test_reference_type_command_set() -> None:
 
     # 10. Interfaces Command
     await assert_command_roundtrip(
-        InterfacesCommand(ref_type=ref_type),
-        InterfacesResponse(interfaces=[InterfaceID(0x9999)]),
+        commands.reference_type.InterfacesCommand(ref_type=ref_type),
+        commands.reference_type.InterfacesResponse(interfaces=[InterfaceID(0x9999)]),
         spec=spec,
     )
 
     # 11. ClassObject Command
     await assert_command_roundtrip(
-        ClassObjectCommand(ref_type=ref_type),
-        ClassObjectResponse(class_object=ClassObjectID(0x8888)),
+        commands.reference_type.ClassObjectCommand(ref_type=ref_type),
+        commands.reference_type.ClassObjectResponse(class_object=ClassObjectID(0x8888)),
         spec=spec,
     )
 
     # 12. SourceDebugExtension Command
     await assert_command_roundtrip(
-        SourceDebugExtensionCommand(ref_type=ref_type),
-        SourceDebugExtensionResponse(extension="KotlinDebugExtension"),
+        commands.reference_type.SourceDebugExtensionCommand(ref_type=ref_type),
+        commands.reference_type.SourceDebugExtensionResponse(
+            extension="KotlinDebugExtension"
+        ),
         spec=spec,
     )
 
     # 13. SignatureWithGeneric Command
     await assert_command_roundtrip(
-        SignatureWithGenericCommand(ref_type=ref_type),
-        SignatureWithGenericResponse(
+        commands.reference_type.SignatureWithGenericCommand(ref_type=ref_type),
+        commands.reference_type.SignatureWithGenericResponse(
             signature="Ljava/util/List;",
             generic_signature="Ljava/util/List<TE;>;",
         ),
@@ -969,10 +753,10 @@ async def test_reference_type_command_set() -> None:
 
     # 14. FieldsWithGeneric Command
     await assert_command_roundtrip(
-        FieldsWithGenericCommand(ref_type=ref_type),
-        FieldsWithGenericResponse(
+        commands.reference_type.FieldsWithGenericCommand(ref_type=ref_type),
+        commands.reference_type.FieldsWithGenericResponse(
             fields=[
-                FieldsWithGenericEntry(
+                commands.reference_type.FieldsWithGenericEntry(
                     field_id=FieldID(0xCCCC),
                     name="list",
                     signature="Ljava/util/List;",
@@ -986,10 +770,10 @@ async def test_reference_type_command_set() -> None:
 
     # 15. MethodsWithGeneric Command
     await assert_command_roundtrip(
-        MethodsWithGenericCommand(ref_type=ref_type),
-        MethodsWithGenericResponse(
+        commands.reference_type.MethodsWithGenericCommand(ref_type=ref_type),
+        commands.reference_type.MethodsWithGenericResponse(
             methods=[
-                MethodsWithGenericEntry(
+                commands.reference_type.MethodsWithGenericEntry(
                     method_id=MethodID(0xDDDD),
                     name="getList",
                     signature="()Ljava/util/List;",
@@ -1003,8 +787,8 @@ async def test_reference_type_command_set() -> None:
 
     # 16. Instances Command
     await assert_command_roundtrip(
-        InstancesCommand(ref_type=ref_type, max_instances=5),
-        InstancesResponse(
+        commands.reference_type.InstancesCommand(ref_type=ref_type, max_instances=5),
+        commands.reference_type.InstancesResponse(
             instances=[
                 TaggedObjectID(
                     tag=JdwpTag.OBJECT,
@@ -1017,15 +801,17 @@ async def test_reference_type_command_set() -> None:
 
     # 17. ClassFileVersion Command
     await assert_command_roundtrip(
-        ClassFileVersionCommand(ref_type=ref_type),
-        ClassFileVersionResponse(major_version=52, minor_version=0),
+        commands.reference_type.ClassFileVersionCommand(ref_type=ref_type),
+        commands.reference_type.ClassFileVersionResponse(
+            major_version=52, minor_version=0
+        ),
         spec=spec,
     )
 
     # 18. ConstantPool Command
     await assert_command_roundtrip(
-        ConstantPoolCommand(ref_type=ref_type),
-        ConstantPoolResponse(bytes=b"\xca\xfe\xba\xbe"),
+        commands.reference_type.ConstantPoolCommand(ref_type=ref_type),
+        commands.reference_type.ConstantPoolResponse(bytes=b"\xca\xfe\xba\xbe"),
         spec=spec,
     )
 
@@ -1041,36 +827,36 @@ async def test_class_type_command_set() -> None:
 
     # 1. Superclass Command
     await assert_command_roundtrip(
-        SuperclassCommand(clazz=clazz),
-        SuperclassResponse(superclass=ClassID(0x22334455)),
+        commands.class_type.SuperclassCommand(clazz=clazz),
+        commands.class_type.SuperclassResponse(superclass=ClassID(0x22334455)),
         spec=spec,
     )
 
     # 2. ClassTypeSetValues Command
     await assert_command_roundtrip(
-        ClassTypeSetValuesCommand(
+        commands.class_type.SetValuesCommand(
             clazz=clazz,
             slots=[
-                ClassTypeSetValuesRequestSlot(
+                commands.class_type.SetValuesRequestSlot(
                     field_id=FieldID(0xAAAA),
                     value=JdwpValue(tag=JdwpTag.INT, value=42),
                 )
             ],
         ),
-        ClassTypeSetValuesResponse(),
+        commands.class_type.SetValuesResponse(),
         spec=spec,
     )
 
     # 3. ClassTypeInvokeMethod Command
     await assert_command_roundtrip(
-        ClassTypeInvokeMethodCommand(
+        commands.class_type.InvokeMethodCommand(
             clazz=clazz,
             thread=thread,
             method=method,
             arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
             options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
         ),
-        ClassTypeInvokeMethodResponse(
+        commands.class_type.InvokeMethodResponse(
             return_value=JdwpValue(tag=JdwpTag.INT, value=200),
             exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
         ),
@@ -1079,14 +865,14 @@ async def test_class_type_command_set() -> None:
 
     # 4. NewInstance Command
     await assert_command_roundtrip(
-        NewInstanceCommand(
+        commands.class_type.NewInstanceCommand(
             clazz=clazz,
             thread=thread,
             method=method,
             arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
             options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
         ),
-        NewInstanceResponse(
+        commands.class_type.NewInstanceResponse(
             new_object=TaggedObjectID(
                 tag=JdwpTag.OBJECT, object_id=ObjectID(0xDEADBEEF)
             ),
@@ -1103,8 +889,10 @@ async def test_array_type_command_set() -> None:
 
     # 1. NewInstance Command
     await assert_command_roundtrip(
-        ArrayTypeNewInstanceCommand(arr_type=ArrayTypeID(0x11223344), length=10),
-        ArrayTypeNewInstanceResponse(new_array=ArrayObjectID(0x55667788)),
+        commands.array_type.NewInstanceCommand(
+            arr_type=ArrayTypeID(0x11223344), length=10
+        ),
+        commands.array_type.NewInstanceResponse(new_array=ArrayObjectID(0x55667788)),
         spec=spec,
     )
 
@@ -1116,14 +904,14 @@ async def test_interface_type_command_set() -> None:
 
     # 1. InvokeMethod Command
     await assert_command_roundtrip(
-        InterfaceTypeInvokeMethodCommand(
+        commands.interface_type.InvokeMethodCommand(
             clazz=InterfaceID(0x11223344),
             thread=ThreadID(0x55667788),
             method=MethodID(0x99AABBCC),
             arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
             options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
         ),
-        InterfaceTypeInvokeMethodResponse(
+        commands.interface_type.InvokeMethodResponse(
             return_value=JdwpValue(tag=JdwpTag.INT, value=200),
             exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
         ),
@@ -1141,22 +929,22 @@ async def test_method_command_set() -> None:
 
     # 1. LineTable Command
     await assert_command_roundtrip(
-        LineTableCommand(ref_type=ref_type, method=method),
-        LineTableResponse(
+        commands.method.LineTableCommand(ref_type=ref_type, method=method),
+        commands.method.LineTableResponse(
             start_code_index=10,
             end_code_index=100,
-            lines=[LineTableEntry(code_index=20, line_number=5)],
+            lines=[commands.method.LineTableEntry(code_index=20, line_number=5)],
         ),
         spec=spec,
     )
 
     # 2. VariableTable Command
     await assert_command_roundtrip(
-        VariableTableCommand(ref_type=ref_type, method=method),
-        VariableTableResponse(
+        commands.method.VariableTableCommand(ref_type=ref_type, method=method),
+        commands.method.VariableTableResponse(
             arg_cnt=1,
             slots=[
-                VariableTableEntry(
+                commands.method.VariableTableEntry(
                     code_index=10,
                     name="arg0",
                     signature="I",
@@ -1170,25 +958,27 @@ async def test_method_command_set() -> None:
 
     # 3. Bytecodes Command
     await assert_command_roundtrip(
-        BytecodesCommand(ref_type=ref_type, method=method),
-        BytecodesResponse(bytecodes=b"\x1b\x3c\x1c\x3d"),
+        commands.method.BytecodesCommand(ref_type=ref_type, method=method),
+        commands.method.BytecodesResponse(bytecodes=b"\x1b\x3c\x1c\x3d"),
         spec=spec,
     )
 
     # 4. IsObsolete Command
     await assert_command_roundtrip(
-        IsObsoleteCommand(ref_type=ref_type, method=method),
-        IsObsoleteResponse(is_obsolete=False),
+        commands.method.IsObsoleteCommand(ref_type=ref_type, method=method),
+        commands.method.IsObsoleteResponse(is_obsolete=False),
         spec=spec,
     )
 
     # 5. VariableTableWithGeneric Command
     await assert_command_roundtrip(
-        VariableTableWithGenericCommand(ref_type=ref_type, method=method),
-        VariableTableWithGenericResponse(
+        commands.method.VariableTableWithGenericCommand(
+            ref_type=ref_type, method=method
+        ),
+        commands.method.VariableTableWithGenericResponse(
             arg_cnt=1,
             slots=[
-                VariableTableWithGenericEntry(
+                commands.method.VariableTableWithGenericEntry(
                     code_index=10,
                     name="listArg",
                     signature="Ljava/util/List;",
@@ -1214,8 +1004,8 @@ async def test_object_reference_command_set() -> None:
 
     # 1. ReferenceType Command
     await assert_command_roundtrip(
-        ObjectRefReferenceTypeCommand(object=obj),
-        ObjectRefReferenceTypeResponse(
+        commands.object_reference.ReferenceTypeCommand(object=obj),
+        commands.object_reference.ReferenceTypeResponse(
             ref_type_tag=JdwpTypeTag.CLASS, type_id=ReferenceTypeID(0x7777)
         ),
         spec=spec,
@@ -1223,30 +1013,34 @@ async def test_object_reference_command_set() -> None:
 
     # 2. GetValues Command
     await assert_command_roundtrip(
-        ObjectRefGetValuesCommand(object=obj, fields=[FieldID(0xAAAA)]),
-        ObjectRefGetValuesResponse(values=[JdwpValue(tag=JdwpTag.INT, value=42)]),
+        commands.object_reference.GetValuesCommand(
+            object=obj, fields=[FieldID(0xAAAA)]
+        ),
+        commands.object_reference.GetValuesResponse(
+            values=[JdwpValue(tag=JdwpTag.INT, value=42)]
+        ),
         spec=spec,
     )
 
     # 3. SetValues Command
     await assert_command_roundtrip(
-        ObjectRefSetValuesCommand(
+        commands.object_reference.SetValuesCommand(
             object=obj,
             slots=[
-                ObjectRefSetValuesRequestSlot(
+                commands.object_reference.SetValuesRequestSlot(
                     field_id=FieldID(0xAAAA),
                     value=JdwpValue(tag=JdwpTag.INT, value=42),
                 )
             ],
         ),
-        ObjectRefSetValuesResponse(),
+        commands.object_reference.SetValuesResponse(),
         spec=spec,
     )
 
     # 5. MonitorInfo Command
     await assert_command_roundtrip(
-        MonitorInfoCommand(object=obj),
-        MonitorInfoResponse(
+        commands.object_reference.MonitorInfoCommand(object=obj),
+        commands.object_reference.MonitorInfoResponse(
             owner=ThreadID(0x8888),
             entry_count=1,
             waiters=[ThreadID(0x9999)],
@@ -1256,7 +1050,7 @@ async def test_object_reference_command_set() -> None:
 
     # 6. InvokeMethod Command
     await assert_command_roundtrip(
-        ObjectRefInvokeMethodCommand(
+        commands.object_reference.InvokeMethodCommand(
             object=obj,
             thread=thread,
             clazz=clazz,
@@ -1264,7 +1058,7 @@ async def test_object_reference_command_set() -> None:
             arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
             options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
         ),
-        ObjectRefInvokeMethodResponse(
+        commands.object_reference.InvokeMethodResponse(
             return_value=JdwpValue(tag=JdwpTag.INT, value=200),
             exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
         ),
@@ -1273,29 +1067,29 @@ async def test_object_reference_command_set() -> None:
 
     # 7. DisableCollection Command
     await assert_command_roundtrip(
-        DisableCollectionCommand(object=obj),
-        DisableCollectionResponse(),
+        commands.object_reference.DisableCollectionCommand(object=obj),
+        commands.object_reference.DisableCollectionResponse(),
         spec=spec,
     )
 
     # 8. EnableCollection Command
     await assert_command_roundtrip(
-        EnableCollectionCommand(object=obj),
-        EnableCollectionResponse(),
+        commands.object_reference.EnableCollectionCommand(object=obj),
+        commands.object_reference.EnableCollectionResponse(),
         spec=spec,
     )
 
     # 9. IsCollected Command
     await assert_command_roundtrip(
-        IsCollectedCommand(object=obj),
-        IsCollectedResponse(is_collected=False),
+        commands.object_reference.IsCollectedCommand(object=obj),
+        commands.object_reference.IsCollectedResponse(is_collected=False),
         spec=spec,
     )
 
     # 10. ReferringObjects Command
     await assert_command_roundtrip(
-        ReferringObjectsCommand(object=obj, max_referrers=5),
-        ReferringObjectsResponse(
+        commands.object_reference.ReferringObjectsCommand(object=obj, max_referrers=5),
+        commands.object_reference.ReferringObjectsResponse(
             referring_objects=[
                 TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xFEED))
             ]
@@ -1311,8 +1105,8 @@ async def test_string_reference_command_set() -> None:
 
     # 1. Value Command
     await assert_command_roundtrip(
-        StringReferenceValueCommand(string_object=StringID(0x11223344)),
-        StringReferenceValueResponse(string_value="Hello World"),
+        commands.string_reference.ValueCommand(string_object=StringID(0x11223344)),
+        commands.string_reference.ValueResponse(string_value="Hello World"),
         spec=spec,
     )
 
@@ -1329,29 +1123,29 @@ async def test_thread_reference_command_set() -> None:
 
     # 1. Name Command
     await assert_command_roundtrip(
-        ThreadRefNameCommand(thread=thread),
-        ThreadRefNameResponse(thread_name="main"),
+        commands.thread_reference.NameCommand(thread=thread),
+        commands.thread_reference.NameResponse(thread_name="main"),
         spec=spec,
     )
 
     # 2. Suspend Command
     await assert_command_roundtrip(
-        ThreadRefSuspendCommand(thread=thread),
-        ThreadRefSuspendResponse(),
+        commands.thread_reference.SuspendCommand(thread=thread),
+        commands.thread_reference.SuspendResponse(),
         spec=spec,
     )
 
     # 3. Resume Command
     await assert_command_roundtrip(
-        ThreadRefResumeCommand(thread=thread),
-        ThreadRefResumeResponse(),
+        commands.thread_reference.ResumeCommand(thread=thread),
+        commands.thread_reference.ResumeResponse(),
         spec=spec,
     )
 
     # 4. Status Command
     await assert_command_roundtrip(
-        ThreadRefStatusCommand(thread=thread),
-        ThreadRefStatusResponse(
+        commands.thread_reference.StatusCommand(thread=thread),
+        commands.thread_reference.StatusResponse(
             thread_status=JdwpThreadStatus.RUNNING,
             suspend_status=JdwpSuspendStatus.SUSPENDED,
         ),
@@ -1360,17 +1154,19 @@ async def test_thread_reference_command_set() -> None:
 
     # 5. ThreadGroup Command
     await assert_command_roundtrip(
-        ThreadGroupCommand(thread=thread),
-        ThreadGroupResponse(thread_group=ThreadGroupID(0x9999)),
+        commands.thread_reference.ThreadGroupCommand(thread=thread),
+        commands.thread_reference.ThreadGroupResponse(
+            thread_group=ThreadGroupID(0x9999)
+        ),
         spec=spec,
     )
 
     # 6. Frames Command
     await assert_command_roundtrip(
-        FramesCommand(thread=thread, start_frame=0, length=5),
-        FramesResponse(
+        commands.thread_reference.FramesCommand(thread=thread, start_frame=0, length=5),
+        commands.thread_reference.FramesResponse(
             frames=[
-                FramesEntry(
+                commands.thread_reference.FramesEntry(
                     frame_id=FrameID(0xAAAA),
                     location=location,
                 )
@@ -1381,15 +1177,15 @@ async def test_thread_reference_command_set() -> None:
 
     # 7. FrameCount Command
     await assert_command_roundtrip(
-        FrameCountCommand(thread=thread),
-        FrameCountResponse(frame_count=1),
+        commands.thread_reference.FrameCountCommand(thread=thread),
+        commands.thread_reference.FrameCountResponse(frame_count=1),
         spec=spec,
     )
 
     # 8. OwnedMonitors Command
     await assert_command_roundtrip(
-        OwnedMonitorsCommand(thread=thread),
-        OwnedMonitorsResponse(
+        commands.thread_reference.OwnedMonitorsCommand(thread=thread),
+        commands.thread_reference.OwnedMonitorsResponse(
             monitors=[TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xBBBB))]
         ),
         spec=spec,
@@ -1397,8 +1193,8 @@ async def test_thread_reference_command_set() -> None:
 
     # 9. CurrentContendedMonitor Command
     await assert_command_roundtrip(
-        CurrentContendedMonitorCommand(thread=thread),
-        CurrentContendedMonitorResponse(
+        commands.thread_reference.CurrentContendedMonitorCommand(thread=thread),
+        commands.thread_reference.CurrentContendedMonitorResponse(
             monitor=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xCCCC))
         ),
         spec=spec,
@@ -1406,31 +1202,33 @@ async def test_thread_reference_command_set() -> None:
 
     # 10. Stop Command
     await assert_command_roundtrip(
-        StopCommand(thread=thread, throwable=ObjectID(0xDDDD)),
-        StopResponse(),
+        commands.thread_reference.StopCommand(
+            thread=thread, throwable=ObjectID(0xDDDD)
+        ),
+        commands.thread_reference.StopResponse(),
         spec=spec,
     )
 
     # 11. Interrupt Command
     await assert_command_roundtrip(
-        InterruptCommand(thread=thread),
-        InterruptResponse(),
+        commands.thread_reference.InterruptCommand(thread=thread),
+        commands.thread_reference.InterruptResponse(),
         spec=spec,
     )
 
     # 12. SuspendCount Command
     await assert_command_roundtrip(
-        SuspendCountCommand(thread=thread),
-        SuspendCountResponse(suspend_count=1),
+        commands.thread_reference.SuspendCountCommand(thread=thread),
+        commands.thread_reference.SuspendCountResponse(suspend_count=1),
         spec=spec,
     )
 
     # 13. OwnedMonitorsStackDepthInfo Command
     await assert_command_roundtrip(
-        OwnedMonitorsStackDepthInfoCommand(thread=thread),
-        OwnedMonitorsStackDepthInfoResponse(
+        commands.thread_reference.OwnedMonitorsStackDepthInfoCommand(thread=thread),
+        commands.thread_reference.OwnedMonitorsStackDepthInfoResponse(
             monitors=[
-                MonitorStackDepthInfoEntry(
+                commands.thread_reference.MonitorStackDepthInfoEntry(
                     monitor=TaggedObjectID(
                         tag=JdwpTag.OBJECT, object_id=ObjectID(0xEEEE)
                     ),
@@ -1443,10 +1241,10 @@ async def test_thread_reference_command_set() -> None:
 
     # 14. ForceEarlyReturn Command
     await assert_command_roundtrip(
-        ForceEarlyReturnCommand(
+        commands.thread_reference.ForceEarlyReturnCommand(
             thread=thread, value=JdwpValue(tag=JdwpTag.INT, value=42)
         ),
-        ForceEarlyReturnResponse(),
+        commands.thread_reference.ForceEarlyReturnResponse(),
         spec=spec,
     )
 
@@ -1460,22 +1258,24 @@ async def test_thread_group_reference_command_set() -> None:
 
     # 1. Name Command
     await assert_command_roundtrip(
-        ThreadGroupRefNameCommand(group=group),
-        ThreadGroupRefNameResponse(group_name="system"),
+        commands.thread_group_reference.NameCommand(group=group),
+        commands.thread_group_reference.NameResponse(group_name="system"),
         spec=spec,
     )
 
     # 2. Parent Command
     await assert_command_roundtrip(
-        ParentCommand(group=group),
-        ParentResponse(parent_group=ThreadGroupID(0x55667788)),
+        commands.thread_group_reference.ParentCommand(group=group),
+        commands.thread_group_reference.ParentResponse(
+            parent_group=ThreadGroupID(0x55667788)
+        ),
         spec=spec,
     )
 
     # 3. Children Command
     await assert_command_roundtrip(
-        ChildrenCommand(group=group),
-        ChildrenResponse(
+        commands.thread_group_reference.ChildrenCommand(group=group),
+        commands.thread_group_reference.ChildrenResponse(
             child_threads=[ThreadID(0xAAAA)],
             child_groups=[ThreadGroupID(0xBBBB)],
         ),
@@ -1492,16 +1292,18 @@ async def test_array_reference_command_set() -> None:
 
     # 1. Length Command
     await assert_command_roundtrip(
-        ArrayRefLengthCommand(array_object=arr),
-        ArrayRefLengthResponse(array_length=5),
+        commands.array_reference.LengthCommand(array_object=arr),
+        commands.array_reference.LengthResponse(array_length=5),
         spec=spec,
     )
 
     # 2. GetValues Command
     await assert_command_roundtrip(
-        ArrayRefGetValuesCommand(array_object=arr, first_index=0, length=2),
-        ArrayRefGetValuesResponse(
-            values=JdwpArrayRegion(
+        commands.array_reference.GetValuesCommand(
+            array_object=arr, first_index=0, length=2
+        ),
+        commands.array_reference.GetValuesResponse(
+            values=commands.array_reference.JdwpArrayRegion(
                 tag=JdwpTag.INT,
                 values=[
                     JdwpValue(tag=JdwpTag.INT, value=100),
@@ -1514,7 +1316,7 @@ async def test_array_reference_command_set() -> None:
 
     # 3. SetValues Command
     await assert_command_roundtrip(
-        ArrayRefSetValuesCommand(
+        commands.array_reference.SetValuesCommand(
             array_object=arr,
             first_index=0,
             tag=JdwpTag.INT,
@@ -1523,7 +1325,7 @@ async def test_array_reference_command_set() -> None:
                 JdwpValue(tag=JdwpTag.INT, value=400),
             ],
         ),
-        ArrayRefSetValuesResponse(),
+        commands.array_reference.SetValuesResponse(),
         spec=spec,
     )
 
@@ -1535,10 +1337,12 @@ async def test_class_loader_reference_command_set() -> None:
 
     # 1. VisibleClasses Command
     await assert_command_roundtrip(
-        VisibleClassesCommand(class_loader=ClassLoaderID(0x11223344)),
-        VisibleClassesResponse(
+        commands.class_loader_reference.VisibleClassesCommand(
+            class_loader=ClassLoaderID(0x11223344)
+        ),
+        commands.class_loader_reference.VisibleClassesResponse(
             classes=[
-                VisibleClassesEntry(
+                commands.class_loader_reference.VisibleClassesEntry(
                     ref_type_tag=JdwpTypeTag.CLASS,
                     type_id=ReferenceTypeID(0x55667788),
                 )
@@ -1562,32 +1366,38 @@ async def test_event_request_command_set() -> None:
 
     # 1. ClearAllBreakpoints Command
     await assert_command_roundtrip(
-        ClearAllBreakpointsCommand(),
-        ClearAllBreakpointsResponse(),
+        commands.event_request.ClearAllBreakpointsCommand(),
+        commands.event_request.ClearAllBreakpointsResponse(),
         spec=spec,
     )
 
     # 2. Clear Command
-    cmd_clear = ClearCommand(event_kind=JdwpEventKind.BREAKPOINT, request_id=42)
-    await assert_command_roundtrip(cmd_clear, ClearResponse(), spec=spec)
+    cmd_clear = commands.event_request.ClearCommand(
+        event_kind=JdwpEventKind.BREAKPOINT, request_id=42
+    )
+    await assert_command_roundtrip(
+        cmd_clear, commands.event_request.ClearResponse(), spec=spec
+    )
 
     # 3. Set Command with no modifiers
-    cmd_set_simple = SetCommand(
+    cmd_set_simple = commands.event_request.SetCommand(
         event_kind=JdwpEventKind.BREAKPOINT,
         suspend_policy=JdwpSuspendPolicy.NONE,
         modifiers=[],
     )
-    await assert_command_roundtrip(cmd_set_simple, SetResponse(request_id=100))
+    await assert_command_roundtrip(
+        cmd_set_simple, commands.event_request.SetResponse(request_id=100)
+    )
 
     # 4. Set Command with various modifiers
     modifiers = [
-        CountModifier(count=5),
-        ConditionalModifier(expr_id=123),
-        ThreadOnlyModifier(thread=ObjectID(0x11223344)),
-        ClassOnlyModifier(clazz=ReferenceTypeID(0x55667788)),
-        ClassMatchModifier(class_pattern="java.lang.*"),
-        ClassExcludeModifier(class_pattern="sun.*"),
-        LocationOnlyModifier(
+        commands.event_request.CountModifier(count=5),
+        commands.event_request.ConditionalModifier(expr_id=123),
+        commands.event_request.ThreadOnlyModifier(thread=ObjectID(0x11223344)),
+        commands.event_request.ClassOnlyModifier(clazz=ReferenceTypeID(0x55667788)),
+        commands.event_request.ClassMatchModifier(class_pattern="java.lang.*"),
+        commands.event_request.ClassExcludeModifier(class_pattern="sun.*"),
+        commands.event_request.LocationOnlyModifier(
             loc=Location(
                 type_tag=JdwpTypeTag.CLASS,
                 class_id=ReferenceTypeID(0x99AABBCC),
@@ -1595,29 +1405,31 @@ async def test_event_request_command_set() -> None:
                 index=0x1122334455667788,
             )
         ),
-        ExceptionOnlyModifier(
+        commands.event_request.ExceptionOnlyModifier(
             exception_or_null=ReferenceTypeID(0x77889900), caught=True, uncaught=False
         ),
-        FieldOnlyModifier(
+        commands.event_request.FieldOnlyModifier(
             declaring=ReferenceTypeID(0x66554433), field=FieldID(0x221100AA)
         ),
-        StepModifier(thread=ObjectID(0xDEADBEEF), size=1, depth=2),
-        InstanceOnlyModifier(instance=ObjectID(0xFEEDFACE)),
-        PlatformThreadsOnlyModifier(),
+        commands.event_request.StepModifier(
+            thread=ObjectID(0xDEADBEEF), size=1, depth=2
+        ),
+        commands.event_request.InstanceOnlyModifier(instance=ObjectID(0xFEEDFACE)),
+        commands.event_request.PlatformThreadsOnlyModifier(),
     ]
-    cmd_set_complex = SetCommand(
+    cmd_set_complex = commands.event_request.SetCommand(
         event_kind=JdwpEventKind.BREAKPOINT,
         suspend_policy=JdwpSuspendPolicy.ALL,
         modifiers=modifiers,
     )
     await assert_command_roundtrip(
-        cmd_set_complex, SetResponse(request_id=42), spec=spec
+        cmd_set_complex, commands.event_request.SetResponse(request_id=42), spec=spec
     )
 
 
-@register_command()
+@commands.register_command()
 @dataclass
-class MockNoResponseCommand(JdwpCommand[None]):
+class MockNoResponseCommand(commands.JdwpCommand[None]):
     COMMAND_SET: ClassVar[int] = 99
     COMMAND: ClassVar[int] = 98
 
@@ -1649,8 +1461,8 @@ async def test_composite_events_roundtrip() -> None:
     )
 
     events = [
-        VMStartEvent(request_id=0, thread=ObjectID(0x1111)),
-        SingleStepEvent(
+        commands.event.VMStartEvent(request_id=0, thread=ObjectID(0x1111)),
+        commands.event.SingleStepEvent(
             request_id=1,
             thread=ObjectID(0x1111),
             location=Location(
@@ -1660,7 +1472,7 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x4444,
             ),
         ),
-        BreakpointEvent(
+        commands.event.BreakpointEvent(
             request_id=42,
             thread=ObjectID(0x2222),
             location=Location(
@@ -1670,7 +1482,7 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x5555666677778888,
             ),
         ),
-        MethodEntryEvent(
+        commands.event.MethodEntryEvent(
             request_id=2,
             thread=ObjectID(0x1111),
             location=Location(
@@ -1680,7 +1492,7 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x4444,
             ),
         ),
-        MethodExitEvent(
+        commands.event.MethodExitEvent(
             request_id=3,
             thread=ObjectID(0x1111),
             location=Location(
@@ -1690,7 +1502,7 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x4444,
             ),
         ),
-        MethodExitWithReturnValueEvent(
+        commands.event.MethodExitWithReturnValueEvent(
             request_id=4,
             thread=ObjectID(0x1111),
             location=Location(
@@ -1701,7 +1513,7 @@ async def test_composite_events_roundtrip() -> None:
             ),
             value=JdwpValue(tag=JdwpTag.STRING, value=ObjectID(0x5555)),
         ),
-        MonitorContendedEnterEvent(
+        commands.event.MonitorContendedEnterEvent(
             request_id=5,
             thread=ObjectID(0x1111),
             object=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0x5555)),
@@ -1712,7 +1524,7 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x4444,
             ),
         ),
-        MonitorContendedEnteredEvent(
+        commands.event.MonitorContendedEnteredEvent(
             request_id=6,
             thread=ObjectID(0x1111),
             object=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0x5555)),
@@ -1723,7 +1535,7 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x4444,
             ),
         ),
-        MonitorWaitEvent(
+        commands.event.MonitorWaitEvent(
             request_id=7,
             thread=ObjectID(0x1111),
             object=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0x5555)),
@@ -1735,7 +1547,7 @@ async def test_composite_events_roundtrip() -> None:
             ),
             timeout=1000,
         ),
-        MonitorWaitedEvent(
+        commands.event.MonitorWaitedEvent(
             request_id=8,
             thread=ObjectID(0x1111),
             object=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0x5555)),
@@ -1747,7 +1559,7 @@ async def test_composite_events_roundtrip() -> None:
             ),
             timed_out=True,
         ),
-        ExceptionEvent(
+        commands.event.ExceptionEvent(
             request_id=9,
             thread=ObjectID(0x1111),
             location=Location(
@@ -1764,15 +1576,15 @@ async def test_composite_events_roundtrip() -> None:
                 index=0x5555,
             ),
         ),
-        ThreadStartEvent(
+        commands.event.ThreadStartEvent(
             request_id=0,
             thread=ObjectID(0x1111),
         ),
-        ThreadDeathEvent(
+        commands.event.ThreadDeathEvent(
             request_id=10,
             thread=ObjectID(0x1111),
         ),
-        ClassPrepareEvent(
+        commands.event.ClassPrepareEvent(
             request_id=0,
             thread=ObjectID(0x1111),
             ref_type_tag=JdwpTypeTag.CLASS,
@@ -1780,11 +1592,11 @@ async def test_composite_events_roundtrip() -> None:
             signature="Ljava/lang/String;",
             status=1,
         ),
-        ClassUnloadEvent(
+        commands.event.ClassUnloadEvent(
             request_id=11,
             signature="Ljava/lang/Object;",
         ),
-        FieldAccessEvent(
+        commands.event.FieldAccessEvent(
             request_id=12,
             thread=ObjectID(0x1111),
             location=Location(
@@ -1798,7 +1610,7 @@ async def test_composite_events_roundtrip() -> None:
             field_id=FieldID(0x7777),
             object=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0x5555)),
         ),
-        FieldModificationEvent(
+        commands.event.FieldModificationEvent(
             request_id=77,
             thread=ObjectID(0x2222),
             location=Location(
@@ -1813,12 +1625,12 @@ async def test_composite_events_roundtrip() -> None:
             object=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xAAAA)),
             value_to_be=JdwpValue(tag=JdwpTag.INT, value=42),
         ),
-        VMDeathEvent(
+        commands.event.VMDeathEvent(
             request_id=13,
         ),
     ]
 
-    composite = CompositeCommand(
+    composite = commands.event.CompositeCommand(
         suspend_policy=JdwpSuspendPolicy.ALL,
         events=events,
     )

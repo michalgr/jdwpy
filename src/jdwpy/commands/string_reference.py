@@ -8,7 +8,7 @@ from jdwpy.spec import StringID
 
 
 @dataclass
-class StringReferenceValueResponse(JdwpResponse):
+class ValueResponse(JdwpResponse):
     """Represents the response of StringReference.Value command."""
 
     string_value: str
@@ -21,9 +21,9 @@ class StringReferenceValueResponse(JdwpResponse):
         writer.write_string(self.string_value)
 
 
-@register_command(StringReferenceValueResponse)
+@register_command(ValueResponse)
 @dataclass
-class StringReferenceValueCommand(JdwpCommand[StringReferenceValueResponse]):
+class ValueCommand(JdwpCommand[ValueResponse]):
     """JDWP Command Set 10, Command 1: StringReference.Value."""
 
     COMMAND_SET: ClassVar[int] = 10

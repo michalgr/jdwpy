@@ -17,7 +17,7 @@ from jdwpy.constants import JdwpThreadStatus, JdwpSuspendStatus
 
 
 @dataclass
-class ThreadRefNameResponse(JdwpResponse):
+class NameResponse(JdwpResponse):
     """Represents the response of ThreadReference.Name command."""
 
     thread_name: str
@@ -30,9 +30,9 @@ class ThreadRefNameResponse(JdwpResponse):
         writer.write_string(self.thread_name)
 
 
-@register_command(ThreadRefNameResponse)
+@register_command(NameResponse)
 @dataclass
-class ThreadRefNameCommand(JdwpCommand[ThreadRefNameResponse]):
+class NameCommand(JdwpCommand[NameResponse]):
     """JDWP Command Set 11, Command 1: ThreadReference.Name."""
 
     COMMAND_SET: ClassVar[int] = 11
@@ -49,7 +49,7 @@ class ThreadRefNameCommand(JdwpCommand[ThreadRefNameResponse]):
 
 
 @dataclass
-class ThreadRefSuspendResponse(JdwpResponse):
+class SuspendResponse(JdwpResponse):
     """Represents the response of ThreadReference.Suspend command."""
 
     @classmethod
@@ -60,9 +60,9 @@ class ThreadRefSuspendResponse(JdwpResponse):
         pass
 
 
-@register_command(ThreadRefSuspendResponse)
+@register_command(SuspendResponse)
 @dataclass
-class ThreadRefSuspendCommand(JdwpCommand[ThreadRefSuspendResponse]):
+class SuspendCommand(JdwpCommand[SuspendResponse]):
     """JDWP Command Set 11, Command 2: ThreadReference.Suspend."""
 
     COMMAND_SET: ClassVar[int] = 11
@@ -79,7 +79,7 @@ class ThreadRefSuspendCommand(JdwpCommand[ThreadRefSuspendResponse]):
 
 
 @dataclass
-class ThreadRefResumeResponse(JdwpResponse):
+class ResumeResponse(JdwpResponse):
     """Represents the response of ThreadReference.Resume command."""
 
     @classmethod
@@ -90,9 +90,9 @@ class ThreadRefResumeResponse(JdwpResponse):
         pass
 
 
-@register_command(ThreadRefResumeResponse)
+@register_command(ResumeResponse)
 @dataclass
-class ThreadRefResumeCommand(JdwpCommand[ThreadRefResumeResponse]):
+class ResumeCommand(JdwpCommand[ResumeResponse]):
     """JDWP Command Set 11, Command 3: ThreadReference.Resume."""
 
     COMMAND_SET: ClassVar[int] = 11
@@ -109,7 +109,7 @@ class ThreadRefResumeCommand(JdwpCommand[ThreadRefResumeResponse]):
 
 
 @dataclass
-class ThreadRefStatusResponse(JdwpResponse):
+class StatusResponse(JdwpResponse):
     """Represents the response of ThreadReference.Status command."""
 
     thread_status: JdwpThreadStatus
@@ -127,9 +127,9 @@ class ThreadRefStatusResponse(JdwpResponse):
         writer.write_int(self.suspend_status)
 
 
-@register_command(ThreadRefStatusResponse)
+@register_command(StatusResponse)
 @dataclass
-class ThreadRefStatusCommand(JdwpCommand[ThreadRefStatusResponse]):
+class StatusCommand(JdwpCommand[StatusResponse]):
     """JDWP Command Set 11, Command 4: ThreadReference.Status."""
 
     COMMAND_SET: ClassVar[int] = 11

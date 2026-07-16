@@ -7,19 +7,7 @@ from pathlib import Path
 import pytest
 
 from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy
-from jdwpy.commands import (
-    VersionCommand,
-    VersionResponse,
-    IDSizesCommand,
-    IDSizesResponse,
-    CompositeCommand,
-    VMStartEvent,
-    SetCommand,
-    SetResponse,
-    ClassMatchModifier,
-    ResumeCommand,
-    ClassPrepareEvent,
-)
+from jdwpy import commands
 from jdwpy.connection import JdwpConnection
 from jdwpy.proxy import JdwpProxySession
 from jdwpy.testing import compile_java, find_free_port, wait_for_port
@@ -72,26 +60,26 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
     """Sends JDWP version and IDSizes commands, verifying the responses and spec updates."""
     # 0. Read startup VM_START composite event command
     event = await conn.read_command()
-    assert isinstance(event, CompositeCommand)
+    assert isinstance(event, commands.event.CompositeCommand)
     assert len(event.events) == 1
-    assert isinstance(event.events[0], VMStartEvent)
+    assert isinstance(event.events[0], commands.event.VMStartEvent)
     assert event.events[0].thread > 0
 
-    # 1. Send VersionCommand and verify response
-    version = await conn.send_command(VersionCommand())
-    assert isinstance(version, VersionResponse)
+    # 1. Send commands.vm.VersionCommand and verify response
+    version = await conn.send_command(commands.vm.VersionCommand())
+    assert isinstance(version, commands.vm.VersionResponse)
     assert version.jdwp_major >= 1
     assert any(
         vendor in version.vm_name
         for vendor in ["OpenJDK", "HotSpot", "Java", "Temurin"]
     )
 
-    # 2. Check and send IDSizesCommand
+    # 2. Check and send commands.vm.IDSizesCommand
     initial_field_size = conn.spec.field_id_struct.size
     assert initial_field_size == 8  # Default standard size
 
-    idsizes = await conn.send_command(IDSizesCommand())
-    assert isinstance(idsizes, IDSizesResponse)
+    idsizes = await conn.send_command(commands.vm.IDSizesCommand())
+    assert isinstance(idsizes, commands.vm.IDSizesResponse)
 
     # 3. Check that connection spec was dynamically updated
     assert conn.spec.field_id_struct.size == idsizes.field_id_size
@@ -100,30 +88,32 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
 
     # 4. Set a CLASS_PREPARE event request to monitor loading/preparation of SimpleApp
     set_resp = await conn.send_command(
-        SetCommand(
+        commands.event_request.SetCommand(
             event_kind=JdwpEventKind.CLASS_PREPARE,
             suspend_policy=JdwpSuspendPolicy.ALL,
-            modifiers=[ClassMatchModifier(class_pattern="SimpleApp")],
+            modifiers=[
+                commands.event_request.ClassMatchModifier(class_pattern="SimpleApp")
+            ],
         )
     )
-    assert isinstance(set_resp, SetResponse)
+    assert isinstance(set_resp, commands.event_request.SetResponse)
     request_id = set_resp.request_id
 
     # 5. Resume execution to trigger class preparation
-    await conn.send_command(ResumeCommand())
+    await conn.send_command(commands.vm.ResumeCommand())
 
-    # 6. Read the Composite event and verify it is indeed ClassPrepareEvent for SimpleApp
+    # 6. Read the Composite event and verify it is indeed commands.event.ClassPrepareEvent for SimpleApp
     event_cmd = await conn.read_command()
-    assert isinstance(event_cmd, CompositeCommand)
+    assert isinstance(event_cmd, commands.event.CompositeCommand)
     assert len(event_cmd.events) == 1
 
     class_prep = event_cmd.events[0]
-    assert isinstance(class_prep, ClassPrepareEvent)
+    assert isinstance(class_prep, commands.event.ClassPrepareEvent)
     assert class_prep.request_id == request_id
     assert class_prep.signature == "LSimpleApp;"
 
     # 7. Resume again so the target VM can finish execution
-    await conn.send_command(ResumeCommand())
+    await conn.send_command(commands.vm.ResumeCommand())
 
 
 @pytest.mark.asyncio

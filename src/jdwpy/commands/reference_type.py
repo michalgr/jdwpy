@@ -232,7 +232,7 @@ class MethodsCommand(JdwpCommand[MethodsResponse]):
 
 
 @dataclass
-class RefTypeGetValuesResponse(JdwpResponse):
+class GetValuesResponse(JdwpResponse):
     """Represents the response of ReferenceType.GetValues command."""
 
     values: list[JdwpValue]
@@ -249,9 +249,9 @@ class RefTypeGetValuesResponse(JdwpResponse):
             writer.write_value(v)
 
 
-@register_command(RefTypeGetValuesResponse)
+@register_command(GetValuesResponse)
 @dataclass
-class RefTypeGetValuesCommand(JdwpCommand[RefTypeGetValuesResponse]):
+class GetValuesCommand(JdwpCommand[GetValuesResponse]):
     """JDWP Command Set 2, Command 6: ReferenceType.GetValues."""
 
     COMMAND_SET: ClassVar[int] = 2
@@ -360,7 +360,7 @@ class NestedTypesCommand(JdwpCommand[NestedTypesResponse]):
 
 
 @dataclass
-class RefTypeStatusResponse(JdwpResponse):
+class StatusResponse(JdwpResponse):
     """Represents the response of ReferenceType.Status command."""
 
     status: JdwpClassStatus
@@ -373,9 +373,9 @@ class RefTypeStatusResponse(JdwpResponse):
         writer.write_int(self.status)
 
 
-@register_command(RefTypeStatusResponse)
+@register_command(StatusResponse)
 @dataclass
-class RefTypeStatusCommand(JdwpCommand[RefTypeStatusResponse]):
+class StatusCommand(JdwpCommand[StatusResponse]):
     """JDWP Command Set 2, Command 9: ReferenceType.Status."""
 
     COMMAND_SET: ClassVar[int] = 2

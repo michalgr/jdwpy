@@ -8,7 +8,7 @@ from jdwpy.spec import ThreadGroupID, ThreadID
 
 
 @dataclass
-class ThreadGroupRefNameResponse(JdwpResponse):
+class NameResponse(JdwpResponse):
     """Represents the response of ThreadGroupReference.Name command."""
 
     group_name: str
@@ -21,9 +21,9 @@ class ThreadGroupRefNameResponse(JdwpResponse):
         writer.write_string(self.group_name)
 
 
-@register_command(ThreadGroupRefNameResponse)
+@register_command(NameResponse)
 @dataclass
-class ThreadGroupRefNameCommand(JdwpCommand[ThreadGroupRefNameResponse]):
+class NameCommand(JdwpCommand[NameResponse]):
     """JDWP Command Set 12, Command 1: ThreadGroupReference.Name."""
 
     COMMAND_SET: ClassVar[int] = 12
