@@ -5,6 +5,7 @@ from typing import Callable, Awaitable, Self, overload, Any
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
 from jdwpy.spec import IdSizesSpec
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
+from jdwpy.exceptions import JdwpException
 
 logger = logging.getLogger(__name__)
 
@@ -209,9 +210,10 @@ class JdwpConnection:
                     cmd.__class__.__name__,
                 )
 
-            raise RuntimeError(
-                f"JDWP Command {cmd.__class__.__name__} failed with error: "
-                f"{err_code.name if err_code else 'UNKNOWN'} ({reply.error_code})"
+            raise JdwpException(
+                error_code=err_code,
+                raw_error_code=reply.error_code,
+                command=cmd,
             )
 
         # Deserialize response

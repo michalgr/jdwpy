@@ -37,7 +37,7 @@ from jdwpy.spec import (
 )
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
-from jdwpy import commands
+from jdwpy import commands, JdwpException
 
 from jdwpy.connection import (
     JdwpConnection,
@@ -1665,10 +1665,13 @@ async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> Non
         )
         reader.feed_data(reply.to_bytes())
 
-        # Assert that executing the task raises RuntimeError
-        with pytest.raises(RuntimeError) as exc_info:
+        # Assert that executing the task raises JdwpException
+        with pytest.raises(JdwpException) as exc_info:
             await task
 
+        assert exc_info.value.error_code == JdwpErrorCode.INVALID_THREAD
+        assert exc_info.value.raw_error_code == JdwpErrorCode.INVALID_THREAD.value
+        assert isinstance(exc_info.value.command, commands.vm.VersionCommand)
         assert "failed with error: INVALID_THREAD" in str(exc_info.value)
 
         # Assert that a warning was captured in log

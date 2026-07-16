@@ -19,6 +19,7 @@ from jdwpy.spec import (
 )
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
+from jdwpy.exceptions import JdwpException
 from jdwpy.connection import (
     JdwpConnection,
     JdwpPacketConnection,
@@ -46,6 +47,7 @@ __all__ = [
     "JdwpReplyPacket",
     "JdwpReader",
     "JdwpWriter",
+    "JdwpException",
     "JdwpConnection",
     "JdwpPacketConnection",
     "establish_jdwp_connection",
