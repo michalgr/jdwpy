@@ -24,6 +24,18 @@ class JdwpTag(IntEnum):
     CLASS_LOADER = 108  # 'l'
     CLASS_OBJECT = 99  # 'c'
 
+    @property
+    def is_object(self) -> bool:
+        return self in (
+            JdwpTag.ARRAY,
+            JdwpTag.OBJECT,
+            JdwpTag.STRING,
+            JdwpTag.THREAD,
+            JdwpTag.THREAD_GROUP,
+            JdwpTag.CLASS_LOADER,
+            JdwpTag.CLASS_OBJECT,
+        )
+
 
 class JdwpErrorCode(IntEnum):
     """JDWP Error Codes mapped to their standard protocol definitions."""

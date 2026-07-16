@@ -212,6 +212,15 @@ from jdwpy.commands.thread_group_reference import (
     ChildrenCommand,
     ChildrenResponse,
 )
+from jdwpy.commands.array_reference import (
+    ArrayRefLengthCommand,
+    ArrayRefLengthResponse,
+    ArrayRefGetValuesCommand,
+    ArrayRefGetValuesResponse,
+    ArrayRefSetValuesCommand,
+    ArrayRefSetValuesResponse,
+    JdwpArrayRegion,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -398,6 +407,13 @@ __all__ = [
     "ParentResponse",
     "ChildrenCommand",
     "ChildrenResponse",
+    "ArrayRefLengthCommand",
+    "ArrayRefLengthResponse",
+    "ArrayRefGetValuesCommand",
+    "ArrayRefGetValuesResponse",
+    "ArrayRefSetValuesCommand",
+    "ArrayRefSetValuesResponse",
+    "JdwpArrayRegion",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",

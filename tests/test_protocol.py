@@ -38,6 +38,13 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    ArrayRefLengthCommand,
+    ArrayRefLengthResponse,
+    ArrayRefGetValuesCommand,
+    ArrayRefGetValuesResponse,
+    ArrayRefSetValuesCommand,
+    ArrayRefSetValuesResponse,
+    JdwpArrayRegion,
     ThreadGroupRefNameCommand,
     ThreadGroupRefNameResponse,
     ParentCommand,
@@ -1469,6 +1476,51 @@ async def test_thread_group_reference_command_set() -> None:
             child_threads=[ThreadID(0xAAAA)],
             child_groups=[ThreadGroupID(0xBBBB)],
         ),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_array_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the ArrayReference Command Set (Set 13)."""
+    spec = IdSizesSpec.create()
+
+    arr = ArrayObjectID(0x11223344)
+
+    # 1. Length Command
+    await assert_command_roundtrip(
+        ArrayRefLengthCommand(array_object=arr),
+        ArrayRefLengthResponse(array_length=5),
+        spec=spec,
+    )
+
+    # 2. GetValues Command
+    await assert_command_roundtrip(
+        ArrayRefGetValuesCommand(array_object=arr, first_index=0, length=2),
+        ArrayRefGetValuesResponse(
+            values=JdwpArrayRegion(
+                tag=JdwpTag.INT,
+                values=[
+                    JdwpValue(tag=JdwpTag.INT, value=100),
+                    JdwpValue(tag=JdwpTag.INT, value=200),
+                ],
+            )
+        ),
+        spec=spec,
+    )
+
+    # 3. SetValues Command
+    await assert_command_roundtrip(
+        ArrayRefSetValuesCommand(
+            array_object=arr,
+            first_index=0,
+            tag=JdwpTag.INT,
+            values=[
+                JdwpValue(tag=JdwpTag.INT, value=300),
+                JdwpValue(tag=JdwpTag.INT, value=400),
+            ],
+        ),
+        ArrayRefSetValuesResponse(),
         spec=spec,
     )
 

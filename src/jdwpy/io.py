@@ -153,45 +153,42 @@ class JdwpReader:
             tag = JdwpTag(tag_val)
         except ValueError:
             raise ValueError(f"Unknown JDWP tag byte: {tag_val}")
+        return JdwpValue(tag, self.read_untagged_value(tag))
 
-        val: Any
-        if tag in (
-            JdwpTag.ARRAY,
-            JdwpTag.OBJECT,
-            JdwpTag.STRING,
-            JdwpTag.THREAD,
-            JdwpTag.THREAD_GROUP,
-            JdwpTag.CLASS_LOADER,
-            JdwpTag.CLASS_OBJECT,
-        ):
-            val = self.read_object_id()
+    def read_untagged_value(self, tag: JdwpTag) -> Any:
+        """Reads a JDWP value's raw data without a preceding tag byte."""
+        if tag.is_object:
+            return self.read_object_id()
         elif tag == JdwpTag.BYTE:
             val = struct.unpack_from(">b", self.data, self.offset)[0]
             self.offset += 1
+            return val
         elif tag == JdwpTag.CHAR:
             val = struct.unpack_from(">H", self.data, self.offset)[0]
             self.offset += 2
+            return val
         elif tag == JdwpTag.FLOAT:
             val = struct.unpack_from(">f", self.data, self.offset)[0]
             self.offset += 4
+            return val
         elif tag == JdwpTag.DOUBLE:
             val = struct.unpack_from(">d", self.data, self.offset)[0]
             self.offset += 8
+            return val
         elif tag == JdwpTag.INT:
-            val = self.read_int()
+            return self.read_int()
         elif tag == JdwpTag.LONG:
-            val = self.read_long()
+            return self.read_long()
         elif tag == JdwpTag.SHORT:
             val = struct.unpack_from(">h", self.data, self.offset)[0]
             self.offset += 2
+            return val
         elif tag == JdwpTag.VOID:
-            val = None
+            return None
         elif tag == JdwpTag.BOOLEAN:
-            val = self.read_boolean()
+            return self.read_boolean()
         else:
             raise ValueError(f"Unsupported JDWP tag: {tag}")
-
-        return JdwpValue(tag, val)
 
 
 class JdwpWriter:
@@ -322,35 +319,31 @@ class JdwpWriter:
     def write_value(self, val: JdwpValue) -> Self:
         """Writes a JDWP value with a preceding tag byte."""
         self.write_byte(val.tag)
-        tag = val.tag
-        if tag in (
-            JdwpTag.ARRAY,
-            JdwpTag.OBJECT,
-            JdwpTag.STRING,
-            JdwpTag.THREAD,
-            JdwpTag.THREAD_GROUP,
-            JdwpTag.CLASS_LOADER,
-            JdwpTag.CLASS_OBJECT,
-        ):
-            self.write_object_id(val.value)
+        self.write_untagged_value(val.tag, val.value)
+        return self
+
+    def write_untagged_value(self, tag: JdwpTag, val: Any) -> Self:
+        """Writes a JDWP value's raw data without a preceding tag byte."""
+        if tag.is_object:
+            self.write_object_id(val)
         elif tag == JdwpTag.BYTE:
-            self._buffer.extend(struct.pack(">b", val.value))
+            self._buffer.extend(struct.pack(">b", val))
         elif tag == JdwpTag.CHAR:
-            self._buffer.extend(struct.pack(">H", val.value))
+            self._buffer.extend(struct.pack(">H", val))
         elif tag == JdwpTag.FLOAT:
-            self._buffer.extend(struct.pack(">f", val.value))
+            self._buffer.extend(struct.pack(">f", val))
         elif tag == JdwpTag.DOUBLE:
-            self._buffer.extend(struct.pack(">d", val.value))
+            self._buffer.extend(struct.pack(">d", val))
         elif tag == JdwpTag.INT:
-            self.write_int(val.value)
+            self.write_int(val)
         elif tag == JdwpTag.LONG:
-            self.write_long(val.value)
+            self.write_long(val)
         elif tag == JdwpTag.SHORT:
-            self._buffer.extend(struct.pack(">h", val.value))
+            self._buffer.extend(struct.pack(">h", val))
         elif tag == JdwpTag.VOID:
             pass
         elif tag == JdwpTag.BOOLEAN:
-            self.write_boolean(val.value)
+            self.write_boolean(val)
         else:
             raise ValueError(f"Unsupported JDWP tag: {tag}")
         return self
