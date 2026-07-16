@@ -6,7 +6,12 @@ from typing import ClassVar, Self
 
 from jdwpy.commands.base import JdwpCommand
 from jdwpy.commands.registry import register_command
-from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy
+from jdwpy.constants import (
+    JdwpEventKind,
+    JdwpSuspendPolicy,
+    JdwpTypeTag,
+    JdwpClassStatus,
+)
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.spec import (
     Location,
@@ -338,10 +343,10 @@ class ClassPrepareEvent(JdwpEvent):
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.CLASS_PREPARE
     request_id: int
     thread: ObjectID
-    ref_type_tag: int
+    ref_type_tag: JdwpTypeTag
     type_id: ReferenceTypeID
     signature: str
-    status: int
+    status: JdwpClassStatus
 
     def serialize(self, writer: JdwpWriter) -> None:
         writer.write_object_id(self.thread)
@@ -355,10 +360,10 @@ class ClassPrepareEvent(JdwpEvent):
         return cls(
             request_id=request_id,
             thread=reader.read_object_id(),
-            ref_type_tag=reader.read_byte(),
+            ref_type_tag=JdwpTypeTag(reader.read_byte()),
             type_id=reader.read_reference_type_id(),
             signature=reader.read_string(),
-            status=reader.read_int(),
+            status=JdwpClassStatus(reader.read_int()),
         )
 
 
@@ -389,7 +394,7 @@ class FieldAccessEvent(JdwpEvent):
     request_id: int
     thread: ObjectID
     location: Location
-    ref_type_tag: int
+    ref_type_tag: JdwpTypeTag
     type_id: ReferenceTypeID
     field_id: FieldID
     object: TaggedObjectID
@@ -408,7 +413,7 @@ class FieldAccessEvent(JdwpEvent):
             request_id=request_id,
             thread=reader.read_object_id(),
             location=reader.read_location(),
-            ref_type_tag=reader.read_byte(),
+            ref_type_tag=JdwpTypeTag(reader.read_byte()),
             type_id=reader.read_reference_type_id(),
             field_id=reader.read_field_id(),
             object=reader.read_tagged_object(),
@@ -423,7 +428,7 @@ class FieldModificationEvent(JdwpEvent):
     request_id: int
     thread: ObjectID
     location: Location
-    ref_type_tag: int
+    ref_type_tag: JdwpTypeTag
     type_id: ReferenceTypeID
     field_id: FieldID
     object: TaggedObjectID
@@ -444,7 +449,7 @@ class FieldModificationEvent(JdwpEvent):
             request_id=request_id,
             thread=reader.read_object_id(),
             location=reader.read_location(),
-            ref_type_tag=reader.read_byte(),
+            ref_type_tag=JdwpTypeTag(reader.read_byte()),
             type_id=reader.read_reference_type_id(),
             field_id=reader.read_field_id(),
             object=reader.read_tagged_object(),
