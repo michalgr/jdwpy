@@ -1,7 +1,7 @@
 from __future__ import annotations
 import struct
 from typing import Self, Any
-from jdwpy.constants import JdwpTag
+from jdwpy.constants import JdwpTag, JdwpTypeTag
 from jdwpy.spec import (
     IdSizesSpec,
     ObjectID,
@@ -134,7 +134,7 @@ class JdwpReader:
     def read_location(self) -> Location:
         """Reads a composite Location structure."""
         return Location(
-            type_tag=self.read_byte(),
+            type_tag=JdwpTypeTag(self.read_byte()),
             class_id=self.read_reference_type_id(),
             method_id=self.read_method_id(),
             index=self.read_long(),

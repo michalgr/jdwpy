@@ -2,7 +2,7 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 from typing import NewType, Self, TYPE_CHECKING, Any
-from jdwpy.constants import JdwpTag
+from jdwpy.constants import JdwpTag, JdwpTypeTag
 
 if TYPE_CHECKING:
     from jdwpy.commands.vm import IDSizesResponse
@@ -28,7 +28,7 @@ ArrayObjectID = NewType("ArrayObjectID", int)
 class Location:
     """Represents a composite JDWP code execution Location."""
 
-    type_tag: int
+    type_tag: JdwpTypeTag
     class_id: ReferenceTypeID
     method_id: MethodID
     index: int

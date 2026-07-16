@@ -1119,7 +1119,9 @@ async def test_thread_reference_command_set() -> None:
     thread = ThreadID(0x11223344)
     ref_type = ReferenceTypeID(0x55667788)
     method = MethodID(0x99AABBCC)
-    location = Location(type_tag=1, class_id=ref_type, method_id=method, index=42)
+    location = Location(
+        type_tag=JdwpTypeTag.CLASS, class_id=ref_type, method_id=method, index=42
+    )
 
     # 1. Name Command
     await assert_command_roundtrip(
