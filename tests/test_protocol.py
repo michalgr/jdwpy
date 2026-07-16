@@ -35,6 +35,19 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    LineTableCommand,
+    LineTableResponse,
+    LineTableEntry,
+    VariableTableCommand,
+    VariableTableResponse,
+    VariableTableEntry,
+    BytecodesCommand,
+    BytecodesResponse,
+    IsObsoleteCommand,
+    IsObsoleteResponse,
+    VariableTableWithGenericCommand,
+    VariableTableWithGenericResponse,
+    VariableTableWithGenericEntry,
     InterfaceTypeInvokeMethodCommand,
     InterfaceTypeInvokeMethodResponse,
     ArrayTypeNewInstanceCommand,
@@ -1043,6 +1056,77 @@ async def test_interface_type_command_set() -> None:
         InterfaceTypeInvokeMethodResponse(
             return_value=JdwpValue(tag=JdwpTag.INT, value=200),
             exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
+        ),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_method_command_set() -> None:
+    """Verifies flow and serialization for commands in the Method Command Set (Set 6)."""
+    spec = IdSizesSpec.create()
+
+    ref_type = ReferenceTypeID(0x11223344)
+    method = MethodID(0x55667788)
+
+    # 1. LineTable Command
+    await assert_command_roundtrip(
+        LineTableCommand(ref_type=ref_type, method=method),
+        LineTableResponse(
+            start_code_index=10,
+            end_code_index=100,
+            lines=[LineTableEntry(code_index=20, line_number=5)],
+        ),
+        spec=spec,
+    )
+
+    # 2. VariableTable Command
+    await assert_command_roundtrip(
+        VariableTableCommand(ref_type=ref_type, method=method),
+        VariableTableResponse(
+            arg_cnt=1,
+            slots=[
+                VariableTableEntry(
+                    code_index=10,
+                    name="arg0",
+                    signature="I",
+                    length=90,
+                    slot=0,
+                )
+            ],
+        ),
+        spec=spec,
+    )
+
+    # 3. Bytecodes Command
+    await assert_command_roundtrip(
+        BytecodesCommand(ref_type=ref_type, method=method),
+        BytecodesResponse(bytecodes=b"\x1b\x3c\x1c\x3d"),
+        spec=spec,
+    )
+
+    # 4. IsObsolete Command
+    await assert_command_roundtrip(
+        IsObsoleteCommand(ref_type=ref_type, method=method),
+        IsObsoleteResponse(is_obsolete=False),
+        spec=spec,
+    )
+
+    # 5. VariableTableWithGeneric Command
+    await assert_command_roundtrip(
+        VariableTableWithGenericCommand(ref_type=ref_type, method=method),
+        VariableTableWithGenericResponse(
+            arg_cnt=1,
+            slots=[
+                VariableTableWithGenericEntry(
+                    code_index=10,
+                    name="listArg",
+                    signature="Ljava/util/List;",
+                    generic_signature="Ljava/util/List<Ljava/lang/String;>;",
+                    length=90,
+                    slot=0,
+                )
+            ],
         ),
         spec=spec,
     )
