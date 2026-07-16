@@ -7,11 +7,11 @@ from jdwpy.spec import IdSizesSpec
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.exceptions import JdwpException
 
-logger = logging.getLogger(__name__)
-
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
 from jdwpy.commands.registry import get_response_class, get_command_class
 from jdwpy.commands.vm import IDSizesResponse
+
+logger = logging.getLogger(__name__)
 
 
 class JdwpPacketSender:

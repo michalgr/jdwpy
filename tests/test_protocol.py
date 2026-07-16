@@ -28,7 +28,6 @@ from jdwpy.spec import (
     ReferenceTypeID,
     FieldID,
     MethodID,
-    Location,
     TaggedObjectID,
     JdwpValue,
     ThreadID,
