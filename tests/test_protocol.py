@@ -35,6 +35,25 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    ObjectRefReferenceTypeCommand,
+    ObjectRefReferenceTypeResponse,
+    ObjectRefGetValuesCommand,
+    ObjectRefGetValuesResponse,
+    ObjectRefSetValuesCommand,
+    ObjectRefSetValuesResponse,
+    ObjectRefSetValuesRequestSlot,
+    MonitorInfoCommand,
+    MonitorInfoResponse,
+    ObjectRefInvokeMethodCommand,
+    ObjectRefInvokeMethodResponse,
+    DisableCollectionCommand,
+    DisableCollectionResponse,
+    EnableCollectionCommand,
+    EnableCollectionResponse,
+    IsCollectedCommand,
+    IsCollectedResponse,
+    ReferringObjectsCommand,
+    ReferringObjectsResponse,
     LineTableCommand,
     LineTableResponse,
     LineTableEntry,
@@ -1127,6 +1146,108 @@ async def test_method_command_set() -> None:
                     slot=0,
                 )
             ],
+        ),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_object_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the ObjectReference Command Set (Set 9)."""
+    spec = IdSizesSpec.create()
+
+    obj = ObjectID(0x11223344)
+    thread = ThreadID(0x55667788)
+    clazz = ClassID(0x99AABBCC)
+    method = MethodID(0xDDDEEEFF)
+
+    # 1. ReferenceType Command
+    await assert_command_roundtrip(
+        ObjectRefReferenceTypeCommand(object=obj),
+        ObjectRefReferenceTypeResponse(
+            ref_type_tag=JdwpTypeTag.CLASS, type_id=ReferenceTypeID(0x7777)
+        ),
+        spec=spec,
+    )
+
+    # 2. GetValues Command
+    await assert_command_roundtrip(
+        ObjectRefGetValuesCommand(object=obj, fields=[FieldID(0xAAAA)]),
+        ObjectRefGetValuesResponse(values=[JdwpValue(tag=JdwpTag.INT, value=42)]),
+        spec=spec,
+    )
+
+    # 3. SetValues Command
+    await assert_command_roundtrip(
+        ObjectRefSetValuesCommand(
+            object=obj,
+            slots=[
+                ObjectRefSetValuesRequestSlot(
+                    field_id=FieldID(0xAAAA),
+                    value=JdwpValue(tag=JdwpTag.INT, value=42),
+                )
+            ],
+        ),
+        ObjectRefSetValuesResponse(),
+        spec=spec,
+    )
+
+    # 5. MonitorInfo Command
+    await assert_command_roundtrip(
+        MonitorInfoCommand(object=obj),
+        MonitorInfoResponse(
+            owner=ThreadID(0x8888),
+            entry_count=1,
+            waiters=[ThreadID(0x9999)],
+        ),
+        spec=spec,
+    )
+
+    # 6. InvokeMethod Command
+    await assert_command_roundtrip(
+        ObjectRefInvokeMethodCommand(
+            object=obj,
+            thread=thread,
+            clazz=clazz,
+            method=method,
+            arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
+            options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
+        ),
+        ObjectRefInvokeMethodResponse(
+            return_value=JdwpValue(tag=JdwpTag.INT, value=200),
+            exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
+        ),
+        spec=spec,
+    )
+
+    # 7. DisableCollection Command
+    await assert_command_roundtrip(
+        DisableCollectionCommand(object=obj),
+        DisableCollectionResponse(),
+        spec=spec,
+    )
+
+    # 8. EnableCollection Command
+    await assert_command_roundtrip(
+        EnableCollectionCommand(object=obj),
+        EnableCollectionResponse(),
+        spec=spec,
+    )
+
+    # 9. IsCollected Command
+    await assert_command_roundtrip(
+        IsCollectedCommand(object=obj),
+        IsCollectedResponse(is_collected=False),
+        spec=spec,
+    )
+
+    # 10. ReferringObjects Command
+    await assert_command_roundtrip(
+        ReferringObjectsCommand(object=obj, max_referrers=5),
+        ReferringObjectsResponse(
+            referring_objects=[
+                TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xFEED))
+            ]
         ),
         spec=spec,
     )
