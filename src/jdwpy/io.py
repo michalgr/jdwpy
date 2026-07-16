@@ -18,6 +18,7 @@ from jdwpy.spec import (
     ClassLoaderID,
     ClassObjectID,
     InterfaceID,
+    ClassID,
 )
 
 
@@ -99,6 +100,10 @@ class JdwpReader:
     def read_interface_id(self) -> InterfaceID:
         """Reads a variable-length interface ID."""
         return InterfaceID(self.read_object_id())
+
+    def read_class_id(self) -> ClassID:
+        """Reads a variable-length class ID."""
+        return ClassID(self.read_reference_type_id())
 
     def read_reference_type_id(self) -> ReferenceTypeID:
         """Reads a variable-length reference type ID."""
@@ -253,6 +258,11 @@ class JdwpWriter:
     def write_interface_id(self, val: InterfaceID) -> Self:
         """Writes a variable-length interface ID."""
         self.write_object_id(ObjectID(val))
+        return self
+
+    def write_class_id(self, val: ClassID) -> Self:
+        """Writes a variable-length class ID."""
+        self.write_reference_type_id(ReferenceTypeID(val))
         return self
 
     def write_reference_type_id(self, val: ReferenceTypeID) -> Self:

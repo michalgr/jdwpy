@@ -12,6 +12,7 @@ from jdwpy.constants import (
     JdwpClassStatus,
 )
 from jdwpy.spec import (
+    ClassID,
     ClassLoaderID,
     ClassObjectID,
     InterfaceID,
@@ -31,6 +32,15 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    SuperclassCommand,
+    SuperclassResponse,
+    ClassTypeSetValuesCommand,
+    ClassTypeSetValuesResponse,
+    ClassTypeSetValuesRequestSlot,
+    ClassTypeInvokeMethodCommand,
+    ClassTypeInvokeMethodResponse,
+    NewInstanceCommand,
+    NewInstanceResponse,
     SignatureCommand,
     SignatureResponse,
     ClassLoaderCommand,
@@ -926,6 +936,72 @@ async def test_reference_type_command_set() -> None:
     await assert_command_roundtrip(
         ConstantPoolCommand(ref_type=ref_type),
         ConstantPoolResponse(bytes=b"\xca\xfe\xba\xbe"),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_class_type_command_set() -> None:
+    """Verifies flow and serialization for commands in the ClassType Command Set (Set 3)."""
+    spec = IdSizesSpec.create()
+
+    clazz = ClassID(0x11223344)
+    thread = ThreadID(0x55667788)
+    method = MethodID(0x99AABBCC)
+
+    # 1. Superclass Command
+    await assert_command_roundtrip(
+        SuperclassCommand(clazz=clazz),
+        SuperclassResponse(superclass=ClassID(0x22334455)),
+        spec=spec,
+    )
+
+    # 2. ClassTypeSetValues Command
+    await assert_command_roundtrip(
+        ClassTypeSetValuesCommand(
+            clazz=clazz,
+            slots=[
+                ClassTypeSetValuesRequestSlot(
+                    field_id=FieldID(0xAAAA),
+                    value=JdwpValue(tag=JdwpTag.INT, value=42),
+                )
+            ],
+        ),
+        ClassTypeSetValuesResponse(),
+        spec=spec,
+    )
+
+    # 3. ClassTypeInvokeMethod Command
+    await assert_command_roundtrip(
+        ClassTypeInvokeMethodCommand(
+            clazz=clazz,
+            thread=thread,
+            method=method,
+            arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
+            options=0x2,
+        ),
+        ClassTypeInvokeMethodResponse(
+            return_value=JdwpValue(tag=JdwpTag.INT, value=200),
+            exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
+        ),
+        spec=spec,
+    )
+
+    # 4. NewInstance Command
+    await assert_command_roundtrip(
+        NewInstanceCommand(
+            clazz=clazz,
+            thread=thread,
+            method=method,
+            arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
+            options=0x2,
+        ),
+        NewInstanceResponse(
+            new_object=TaggedObjectID(
+                tag=JdwpTag.OBJECT, object_id=ObjectID(0xDEADBEEF)
+            ),
+            exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
+        ),
         spec=spec,
     )
 

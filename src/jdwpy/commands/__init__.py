@@ -113,6 +113,17 @@ from jdwpy.commands.reference_type import (
     ConstantPoolCommand,
     ConstantPoolResponse,
 )
+from jdwpy.commands.class_type import (
+    SuperclassCommand,
+    SuperclassResponse,
+    ClassTypeSetValuesCommand,
+    ClassTypeSetValuesResponse,
+    ClassTypeSetValuesRequestSlot,
+    ClassTypeInvokeMethodCommand,
+    ClassTypeInvokeMethodResponse,
+    NewInstanceCommand,
+    NewInstanceResponse,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -216,6 +227,15 @@ __all__ = [
     "ClassFileVersionResponse",
     "ConstantPoolCommand",
     "ConstantPoolResponse",
+    "SuperclassCommand",
+    "SuperclassResponse",
+    "ClassTypeSetValuesCommand",
+    "ClassTypeSetValuesResponse",
+    "ClassTypeSetValuesRequestSlot",
+    "ClassTypeInvokeMethodCommand",
+    "ClassTypeInvokeMethodResponse",
+    "NewInstanceCommand",
+    "NewInstanceResponse",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",

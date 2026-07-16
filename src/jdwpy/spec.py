@@ -19,6 +19,7 @@ StringID = NewType("StringID", int)
 ClassLoaderID = NewType("ClassLoaderID", int)
 ClassObjectID = NewType("ClassObjectID", int)
 InterfaceID = NewType("InterfaceID", int)
+ClassID = NewType("ClassID", int)
 
 
 @dataclass(frozen=True)
