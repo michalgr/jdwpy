@@ -139,3 +139,20 @@ class JdwpInvokeOptions(IntFlag):
     NONE = 0
     INVOKE_SINGLE_THREADED = 0x01
     INVOKE_NONVIRTUAL = 0x02
+
+
+class JdwpThreadStatus(IntEnum):
+    """JDWP Thread Status constants."""
+
+    ZOMBIE = 0
+    RUNNING = 1
+    SLEEPING = 2
+    MONITOR = 3
+    WAIT = 4
+
+
+class JdwpSuspendStatus(IntEnum):
+    """JDWP Suspend Status constants."""
+
+    NONE = 0
+    SUSPENDED = 1

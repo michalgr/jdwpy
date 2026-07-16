@@ -4,6 +4,8 @@ from typing import ClassVar, Self
 import asyncio
 import pytest
 from jdwpy.constants import (
+    JdwpThreadStatus,
+    JdwpSuspendStatus,
     JdwpErrorCode,
     JdwpEventKind,
     JdwpSuspendPolicy,
@@ -13,6 +15,7 @@ from jdwpy.constants import (
     JdwpInvokeOptions,
 )
 from jdwpy.spec import (
+    Location,
     ArrayTypeID,
     ArrayObjectID,
     ClassID,
@@ -35,6 +38,36 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    ThreadRefNameCommand,
+    ThreadRefNameResponse,
+    ThreadRefSuspendCommand,
+    ThreadRefSuspendResponse,
+    ThreadRefResumeCommand,
+    ThreadRefResumeResponse,
+    ThreadRefStatusCommand,
+    ThreadRefStatusResponse,
+    ThreadGroupCommand,
+    ThreadGroupResponse,
+    FramesCommand,
+    FramesResponse,
+    FramesEntry,
+    FrameCountCommand,
+    FrameCountResponse,
+    OwnedMonitorsCommand,
+    OwnedMonitorsResponse,
+    CurrentContendedMonitorCommand,
+    CurrentContendedMonitorResponse,
+    StopCommand,
+    StopResponse,
+    InterruptCommand,
+    InterruptResponse,
+    SuspendCountCommand,
+    SuspendCountResponse,
+    OwnedMonitorsStackDepthInfoCommand,
+    OwnedMonitorsStackDepthInfoResponse,
+    MonitorStackDepthInfoEntry,
+    ForceEarlyReturnCommand,
+    ForceEarlyReturnResponse,
     StringReferenceValueCommand,
     StringReferenceValueResponse,
     ObjectRefReferenceTypeCommand,
@@ -1264,6 +1297,140 @@ async def test_string_reference_command_set() -> None:
     await assert_command_roundtrip(
         StringReferenceValueCommand(string_object=StringID(0x11223344)),
         StringReferenceValueResponse(string_value="Hello World"),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_thread_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the ThreadReference Command Set (Set 11)."""
+    spec = IdSizesSpec.create()
+
+    thread = ThreadID(0x11223344)
+    ref_type = ReferenceTypeID(0x55667788)
+    method = MethodID(0x99AABBCC)
+    location = Location(type_tag=1, class_id=ref_type, method_id=method, index=42)
+
+    # 1. Name Command
+    await assert_command_roundtrip(
+        ThreadRefNameCommand(thread=thread),
+        ThreadRefNameResponse(thread_name="main"),
+        spec=spec,
+    )
+
+    # 2. Suspend Command
+    await assert_command_roundtrip(
+        ThreadRefSuspendCommand(thread=thread),
+        ThreadRefSuspendResponse(),
+        spec=spec,
+    )
+
+    # 3. Resume Command
+    await assert_command_roundtrip(
+        ThreadRefResumeCommand(thread=thread),
+        ThreadRefResumeResponse(),
+        spec=spec,
+    )
+
+    # 4. Status Command
+    await assert_command_roundtrip(
+        ThreadRefStatusCommand(thread=thread),
+        ThreadRefStatusResponse(
+            thread_status=JdwpThreadStatus.RUNNING,
+            suspend_status=JdwpSuspendStatus.SUSPENDED,
+        ),
+        spec=spec,
+    )
+
+    # 5. ThreadGroup Command
+    await assert_command_roundtrip(
+        ThreadGroupCommand(thread=thread),
+        ThreadGroupResponse(thread_group=ThreadGroupID(0x9999)),
+        spec=spec,
+    )
+
+    # 6. Frames Command
+    await assert_command_roundtrip(
+        FramesCommand(thread=thread, start_frame=0, length=5),
+        FramesResponse(
+            frames=[
+                FramesEntry(
+                    frame_id=FrameID(0xAAAA),
+                    location=location,
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 7. FrameCount Command
+    await assert_command_roundtrip(
+        FrameCountCommand(thread=thread),
+        FrameCountResponse(frame_count=1),
+        spec=spec,
+    )
+
+    # 8. OwnedMonitors Command
+    await assert_command_roundtrip(
+        OwnedMonitorsCommand(thread=thread),
+        OwnedMonitorsResponse(
+            monitors=[TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xBBBB))]
+        ),
+        spec=spec,
+    )
+
+    # 9. CurrentContendedMonitor Command
+    await assert_command_roundtrip(
+        CurrentContendedMonitorCommand(thread=thread),
+        CurrentContendedMonitorResponse(
+            monitor=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xCCCC))
+        ),
+        spec=spec,
+    )
+
+    # 10. Stop Command
+    await assert_command_roundtrip(
+        StopCommand(thread=thread, throwable=ObjectID(0xDDDD)),
+        StopResponse(),
+        spec=spec,
+    )
+
+    # 11. Interrupt Command
+    await assert_command_roundtrip(
+        InterruptCommand(thread=thread),
+        InterruptResponse(),
+        spec=spec,
+    )
+
+    # 12. SuspendCount Command
+    await assert_command_roundtrip(
+        SuspendCountCommand(thread=thread),
+        SuspendCountResponse(suspend_count=1),
+        spec=spec,
+    )
+
+    # 13. OwnedMonitorsStackDepthInfo Command
+    await assert_command_roundtrip(
+        OwnedMonitorsStackDepthInfoCommand(thread=thread),
+        OwnedMonitorsStackDepthInfoResponse(
+            monitors=[
+                MonitorStackDepthInfoEntry(
+                    monitor=TaggedObjectID(
+                        tag=JdwpTag.OBJECT, object_id=ObjectID(0xEEEE)
+                    ),
+                    stack_depth=2,
+                )
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 14. ForceEarlyReturn Command
+    await assert_command_roundtrip(
+        ForceEarlyReturnCommand(
+            thread=thread, value=JdwpValue(tag=JdwpTag.INT, value=42)
+        ),
+        ForceEarlyReturnResponse(),
         spec=spec,
     )
 
