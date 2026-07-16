@@ -58,7 +58,9 @@ def running_jvm_debuggee():
 
 
 async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
-    """Establishes JDWP connection, sets class prep request, inspects methods, sets breakpoint on testMethod, and verifies stack trace and iteration parameter."""
+    """Establishes JDWP connection, sets class prep request, inspects methods,
+    sets breakpoint on testMethod, and verifies stack trace and iteration parameter.
+    """
     # 0. Read startup VM_START composite event command
     event = await conn.read_command()
     assert isinstance(event, commands.event.CompositeCommand)
