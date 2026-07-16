@@ -15,7 +15,7 @@ def compile_java(source_path: Path, output_dir: Path) -> None:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cmd = ["javac", "-d", str(output_dir), str(source_path)]
+    cmd = ["javac", "-g", "-d", str(output_dir), str(source_path)]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
