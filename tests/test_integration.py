@@ -103,7 +103,7 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
         SetCommand(
             event_kind=JdwpEventKind.CLASS_PREPARE,
             suspend_policy=JdwpSuspendPolicy.ALL,
-            modifiers=[ClassMatchModifier(class_pattern="SimpleApp")]
+            modifiers=[ClassMatchModifier(class_pattern="SimpleApp")],
         )
     )
     assert isinstance(set_resp, SetResponse)
@@ -116,7 +116,7 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
     event_cmd = await conn.read_command()
     assert isinstance(event_cmd, CompositeCommand)
     assert len(event_cmd.events) == 1
-    
+
     class_prep = event_cmd.events[0]
     assert isinstance(class_prep, ClassPrepareEvent)
     assert class_prep.request_id == request_id

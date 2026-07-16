@@ -472,7 +472,9 @@ class ClassPathsResponse(JdwpResponse):
         classpaths = [reader.read_string() for _ in range(num_cp)]
         num_bcp = reader.read_int()
         bootclasspaths = [reader.read_string() for _ in range(num_bcp)]
-        return cls(base_dir=base_dir, classpaths=classpaths, bootclasspaths=bootclasspaths)
+        return cls(
+            base_dir=base_dir, classpaths=classpaths, bootclasspaths=bootclasspaths
+        )
 
     def serialize(self, writer: JdwpWriter) -> None:
         writer.write_string(self.base_dir)

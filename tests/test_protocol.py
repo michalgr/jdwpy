@@ -413,9 +413,7 @@ async def test_virtual_machine_command_set() -> None:
     )
 
     # 5. AllThreads Command
-    all_threads_resp = AllThreadsResponse(
-        threads=[ThreadID(42), ThreadID(43)]
-    )
+    all_threads_resp = AllThreadsResponse(threads=[ThreadID(42), ThreadID(43)])
     await assert_command_roundtrip(
         AllThreadsCommand(),
         all_threads_resp,
@@ -423,9 +421,7 @@ async def test_virtual_machine_command_set() -> None:
     )
 
     # 6. TopLevelThreadGroups Command
-    top_level_groups_resp = TopLevelThreadGroupsResponse(
-        groups=[ThreadGroupID(44)]
-    )
+    top_level_groups_resp = TopLevelThreadGroupsResponse(groups=[ThreadGroupID(44)])
     await assert_command_roundtrip(
         TopLevelThreadGroupsCommand(),
         top_level_groups_resp,
