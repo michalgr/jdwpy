@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import ClassVar
+from dataclasses import dataclass
+from typing import ClassVar, Self
 import asyncio
 import pytest
 from jdwpy.constants import (
@@ -20,15 +21,18 @@ from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
     get_command_class,
+    get_response_class,
     register_command,
     VersionCommand,
     VersionResponse,
     IDSizesCommand,
     IDSizesResponse,
     JdwpCommand,
+    JdwpResponse,
     SetCommand,
     SetResponse,
     ClearCommand,
+    ClearResponse,
     ClearAllBreakpointsCommand,
     ClearAllBreakpointsResponse,
     CountModifier,
@@ -72,9 +76,9 @@ class MockStreamWriter:
         await asyncio.sleep(0)
 
 
-def create_mock_connection() -> tuple[
-    JdwpConnection, asyncio.StreamReader, MockStreamWriter
-]:
+def create_mock_connection(
+    spec: IdSizesSpec | None = None,
+) -> tuple[JdwpConnection, asyncio.StreamReader, MockStreamWriter]:
     """Helper factory that constructs all JDWP connection mock objects and starts the loop."""
     reader = asyncio.StreamReader()
     writer = MockStreamWriter()
@@ -82,8 +86,76 @@ def create_mock_connection() -> tuple[
     receiver = JdwpPacketReceiver(reader)
     packet_conn = JdwpPacketConnection(sender, receiver)
     packet_conn.start()
-    conn = JdwpConnection(packet_conn)
+    conn = JdwpConnection(packet_conn, spec=spec)
     return conn, reader, writer
+
+
+def parse_command_packet(buffer: bytes | bytearray) -> JdwpCommandPacket:
+    """Parses a JdwpCommandPacket from a raw bytes buffer."""
+    if len(buffer) < 11:
+        raise ValueError("Buffer too short for JDWP packet")
+    return JdwpCommandPacket.from_bytes(bytes(buffer[:11]), bytes(buffer[11:]))
+
+
+def feed_reply(reader: asyncio.StreamReader, packet_id: int, payload: bytes) -> None:
+    """Serializes a successful JdwpReplyPacket and feeds it to the StreamReader."""
+    reply = JdwpReplyPacket(
+        id=packet_id,
+        flags=0x80,
+        error_code=JdwpErrorCode.NONE,
+        data=payload,
+    )
+    reader.feed_data(reply.to_bytes())
+
+
+async def assert_command_roundtrip[T: JdwpResponse | None](
+    command: JdwpCommand[T],
+    expected_response: T,
+    spec: IdSizesSpec | None = None,
+) -> None:
+    """Generic helper that sets up a mock connection, runs assertions on serialization,
+
+    and executes a full JDWP command-response roundtrip.
+    """
+    conn, reader, writer = create_mock_connection(spec)
+    async with conn:
+        # 1. Launch sending the command
+        task = asyncio.create_task(conn.send_command(command))
+        await asyncio.sleep(0)  # Yield execution to let command write to mock stream
+
+        # 2. Verify command set, command, and command payload match on the wire
+        packet = parse_command_packet(writer.buffer)
+        assert packet.command_set == command.COMMAND_SET
+        assert packet.command == command.COMMAND
+
+        # Deserialize the bytes written to the writer, verifying they reconstruct the command
+        deserialized_command = command.__class__.from_bytes(packet.data, conn.spec)
+        assert deserialized_command == command
+
+        # 3. If a response is expected, serialize expected_response to feed mock reply
+        response_class = get_response_class(command.__class__)
+        assert (response_class is None) == (expected_response is None)
+
+        if response_class is not None:
+            assert expected_response is not None
+            serialized_response = expected_response.to_bytes(conn.spec)
+            feed_reply(reader, packet.id, serialized_response)
+
+        response = await task
+
+        # Verify the returned response equals expected_response
+        assert response == expected_response
+
+        # Verify dynamic spec updates when IDSizesResponse is received
+        if isinstance(response, IDSizesResponse):
+            assert conn.spec.field_id_struct.size == response.field_id_size
+            assert conn.spec.object_id_struct.size == response.object_id_size
+            assert conn.spec.method_id_struct.size == response.method_id_size
+            assert (
+                conn.spec.reference_type_id_struct.size
+                == response.reference_type_id_size
+            )
+            assert conn.spec.frame_id_struct.size == response.frame_id_size
 
 
 def test_id_sizes_spec_struct_compilation() -> None:
@@ -212,29 +284,22 @@ def test_command_registry_indexing() -> None:
     assert get_command_class(99, 99) is None
 
 
-def test_concrete_commands_payloads() -> None:
-    """Verifies serialization and deserialization of command and reply payloads."""
+@pytest.mark.asyncio
+async def test_virtual_machine_command_set() -> None:
+    """Verifies flow and serialization for commands in the VirtualMachine Command Set (Set 1)."""
     spec = IdSizesSpec.create()
 
-    # 1. Version Command Set
-    cmd = VersionCommand()
-    assert cmd.to_bytes(spec) == b""  # Empty payload request
-
-    resp = VersionResponse(
+    # 1. Version Command
+    resp_version = VersionResponse(
         description="JVM 14.0",
         jdwp_major=1,
         jdwp_minor=6,
         vm_version="14.0.1",
         vm_name="OpenJDK",
     )
-    deserialized_resp = VersionResponse.from_bytes(resp.to_bytes(spec), spec)
-    assert deserialized_resp.description == "JVM 14.0"
-    assert deserialized_resp.jdwp_major == 1
-    assert deserialized_resp.jdwp_minor == 6
-    assert deserialized_resp.vm_version == "14.0.1"
-    assert deserialized_resp.vm_name == "OpenJDK"
+    await assert_command_roundtrip(VersionCommand(), resp_version, spec=spec)
 
-    # 2. IDSizes Command Set
+    # 2. IDSizes Command & spec update verification
     resp_ids = IDSizesResponse(
         field_id_size=4,
         method_id_size=4,
@@ -242,68 +307,13 @@ def test_concrete_commands_payloads() -> None:
         reference_type_id_size=8,
         frame_id_size=8,
     )
-    deserialized_ids = IDSizesResponse.from_bytes(resp_ids.to_bytes(spec), spec)
-    assert deserialized_ids.field_id_size == 4
-    assert deserialized_ids.method_id_size == 4
-    assert deserialized_ids.object_id_size == 8
-    assert deserialized_ids.reference_type_id_size == 8
-    assert deserialized_ids.frame_id_size == 8
+    await assert_command_roundtrip(IDSizesCommand(), resp_ids, spec=spec)
 
 
 @pytest.mark.asyncio
-async def test_jdwp_connection_full_flow() -> None:
-    """Tests the JDWP handshake, background loop, futures routing, and dynamic spec replacement."""
-    conn, reader, writer = create_mock_connection()
-
-    # 2. Send IDSizesCommand and intercept raw writer bytes to feed mock response
-    task = asyncio.create_task(conn.send_command(IDSizesCommand()))
-
-    # Let the event loop run to send command
-    await asyncio.sleep(0)
-
-    # Verify command was sent
-    assert len(writer.buffer) >= 11
-    packet = JdwpCommandPacket.from_bytes(writer.buffer[:11], writer.buffer[11:])
-    assert packet.id == 1
-    assert packet.command_set == 1
-    assert packet.command == 7
-    writer.buffer.clear()
-
-    # Construct and feed the mock IDSizes response packet using library components
-    resp_ids = IDSizesResponse(
-        field_id_size=4,
-        method_id_size=4,
-        object_id_size=8,
-        reference_type_id_size=8,
-        frame_id_size=8,
-    )
-    payload = resp_ids.to_bytes(conn.spec)
-
-    reply_packet = JdwpReplyPacket(
-        id=packet.id,
-        flags=0x80,
-        error_code=JdwpErrorCode.NONE,
-        data=payload,
-    )
-    temp_writer = MockStreamWriter()
-    reply_packet.serialize(temp_writer)  # type: ignore
-    reader.feed_data(temp_writer.buffer)
-
-    # Wait for command response
-    response = await task
-    assert isinstance(response, IDSizesResponse)
-    assert response.field_id_size == 4
-    assert response.method_id_size == 4
-    assert response.object_id_size == 8
-
-    # Verify Dynamic IDSizes Spec Replacement!
-    assert conn.spec.field_id_struct.size == 4
-    assert conn.spec.object_id_struct.size == 8
-
-    await conn.close()
-
-
-def test_event_request_commands_serialization() -> None:
+async def test_event_request_command_set() -> None:
+    """Verifies flow and serialization for commands in the EventRequest Command Set (Set 15)."""
+    # 4-byte JDWP spec configuration
     spec = IdSizesSpec.create(
         field_id_size=4,
         method_id_size=4,
@@ -312,21 +322,26 @@ def test_event_request_commands_serialization() -> None:
         frame_id_size=4,
     )
 
-    # 1. ClearAllBreakpoints
-    cmd_clear_all = ClearAllBreakpointsCommand()
-    assert cmd_clear_all.to_bytes(spec) == b""
-    resp_clear_all = ClearAllBreakpointsResponse()
-    assert resp_clear_all.to_bytes(spec) == b""
+    # 1. ClearAllBreakpoints Command
+    await assert_command_roundtrip(
+        ClearAllBreakpointsCommand(),
+        ClearAllBreakpointsResponse(),
+        spec=spec,
+    )
 
-    # 2. Clear
+    # 2. Clear Command
     cmd_clear = ClearCommand(event_kind=JdwpEventKind.BREAKPOINT, request_id=42)
-    serialized_clear = cmd_clear.to_bytes(spec)
-    assert serialized_clear == b"\x02\x00\x00\x00\x2a"
-    deserialized_clear = ClearCommand.from_bytes(serialized_clear, spec)
-    assert deserialized_clear.event_kind == JdwpEventKind.BREAKPOINT
-    assert deserialized_clear.request_id == 42
+    await assert_command_roundtrip(cmd_clear, ClearResponse(), spec=spec)
 
-    # 3. Set with various modifiers
+    # 3. Set Command with no modifiers
+    cmd_set_simple = SetCommand(
+        event_kind=JdwpEventKind.BREAKPOINT,
+        suspend_policy=JdwpSuspendPolicy.NONE,
+        modifiers=[],
+    )
+    await assert_command_roundtrip(cmd_set_simple, SetResponse(request_id=100))
+
+    # 4. Set Command with various modifiers
     modifiers = [
         CountModifier(count=5),
         ConditionalModifier(expr_id=123),
@@ -352,132 +367,18 @@ def test_event_request_commands_serialization() -> None:
         InstanceOnlyModifier(instance=ObjectID(0xFEEDFACE)),
         PlatformThreadsOnlyModifier(),
     ]
-
-    cmd_set = SetCommand(
+    cmd_set_complex = SetCommand(
         event_kind=JdwpEventKind.BREAKPOINT,
         suspend_policy=JdwpSuspendPolicy.ALL,
         modifiers=modifiers,
     )
-
-    serialized_set = cmd_set.to_bytes(spec)
-    deserialized_set = SetCommand.from_bytes(serialized_set, spec)
-
-    assert deserialized_set.event_kind == JdwpEventKind.BREAKPOINT
-    assert deserialized_set.suspend_policy == JdwpSuspendPolicy.ALL
-    assert len(deserialized_set.modifiers) == len(modifiers)
-
-    # Validate each modifier
-    assert isinstance(deserialized_set.modifiers[0], CountModifier)
-    assert deserialized_set.modifiers[0].count == 5
-
-    assert isinstance(deserialized_set.modifiers[1], ConditionalModifier)
-    assert deserialized_set.modifiers[1].expr_id == 123
-
-    assert isinstance(deserialized_set.modifiers[2], ThreadOnlyModifier)
-    assert deserialized_set.modifiers[2].thread == 0x11223344
-
-    assert isinstance(deserialized_set.modifiers[3], ClassOnlyModifier)
-    assert deserialized_set.modifiers[3].clazz == 0x55667788
-
-    assert isinstance(deserialized_set.modifiers[4], ClassMatchModifier)
-    assert deserialized_set.modifiers[4].class_pattern == "java.lang.*"
-
-    assert isinstance(deserialized_set.modifiers[5], ClassExcludeModifier)
-    assert deserialized_set.modifiers[5].class_pattern == "sun.*"
-
-    assert isinstance(deserialized_set.modifiers[6], LocationOnlyModifier)
-    loc = deserialized_set.modifiers[6].loc
-    assert loc.type_tag == JdwpTypeTag.CLASS
-    assert loc.class_id == 0x99AABBCC
-    assert loc.method_id == 0xDDEEFF00
-    assert loc.index == 0x1122334455667788
-
-    assert isinstance(deserialized_set.modifiers[7], ExceptionOnlyModifier)
-    assert deserialized_set.modifiers[7].exception_or_null == 0x77889900
-    assert deserialized_set.modifiers[7].caught is True
-    assert deserialized_set.modifiers[7].uncaught is False
-
-    assert isinstance(deserialized_set.modifiers[8], FieldOnlyModifier)
-    assert deserialized_set.modifiers[8].declaring == 0x66554433
-    assert deserialized_set.modifiers[8].field == 0x221100AA
-
-    assert isinstance(deserialized_set.modifiers[9], StepModifier)
-    assert deserialized_set.modifiers[9].thread == 0xDEADBEEF
-    assert deserialized_set.modifiers[9].size == 1
-    assert deserialized_set.modifiers[9].depth == 2
-
-    assert isinstance(deserialized_set.modifiers[10], InstanceOnlyModifier)
-    assert deserialized_set.modifiers[10].instance == 0xFEEDFACE
-
-    assert isinstance(deserialized_set.modifiers[11], PlatformThreadsOnlyModifier)
-
-
-@pytest.mark.asyncio
-async def test_event_request_connection_flow() -> None:
-    conn, reader, writer = create_mock_connection()
-
-    task = asyncio.create_task(conn.send_command(ClearAllBreakpointsCommand()))
-    await asyncio.sleep(0)
-
-    assert len(writer.buffer) == 11
-    packet = JdwpCommandPacket.from_bytes(writer.buffer, b"")
-    assert packet.command_set == 15
-    assert packet.command == 3
-    writer.buffer.clear()
-
-    reply_packet = JdwpReplyPacket(
-        id=packet.id,
-        flags=0x80,
-        error_code=JdwpErrorCode.NONE,
-        data=b"",
+    await assert_command_roundtrip(
+        cmd_set_complex, SetResponse(request_id=42), spec=spec
     )
-    temp_writer = MockStreamWriter()
-    reply_packet.serialize(temp_writer)  # type: ignore
-    reader.feed_data(temp_writer.buffer)
-
-    response = await task
-    assert isinstance(response, ClearAllBreakpointsResponse)
-
-    await conn.close()
-
-
-@pytest.mark.asyncio
-async def test_event_request_set_connection_flow() -> None:
-    conn, reader, writer = create_mock_connection()
-
-    cmd = SetCommand(
-        event_kind=JdwpEventKind.BREAKPOINT,
-        suspend_policy=JdwpSuspendPolicy.NONE,
-        modifiers=[],
-    )
-    task = asyncio.create_task(conn.send_command(cmd))
-    await asyncio.sleep(0)
-
-    assert len(writer.buffer) >= 11
-    packet = JdwpCommandPacket.from_bytes(writer.buffer[:11], writer.buffer[11:])
-    assert packet.command_set == 15
-    assert packet.command == 1
-    writer.buffer.clear()
-
-    resp = SetResponse(request_id=100)
-    reply_packet = JdwpReplyPacket(
-        id=packet.id,
-        flags=0x80,
-        error_code=JdwpErrorCode.NONE,
-        data=resp.to_bytes(conn.spec),
-    )
-    temp_writer = MockStreamWriter()
-    reply_packet.serialize(temp_writer)  # type: ignore
-    reader.feed_data(temp_writer.buffer)
-
-    response = await task
-    assert isinstance(response, SetResponse)
-    assert response.request_id == 100
-
-    await conn.close()
 
 
 @register_command()
+@dataclass
 class MockNoResponseCommand(JdwpCommand[None]):
     COMMAND_SET: ClassVar[int] = 99
     COMMAND: ClassVar[int] = 98
@@ -486,20 +387,14 @@ class MockNoResponseCommand(JdwpCommand[None]):
         pass
 
     @classmethod
-    def deserialize(cls, reader: JdwpReader) -> MockNoResponseCommand:
+    def deserialize(cls, reader: JdwpReader) -> Self:
         return cls()
 
 
 @pytest.mark.asyncio
-async def test_jdwp_command_no_response() -> None:
-    conn, reader, writer = create_mock_connection()
-
-    res = await conn.send_command(MockNoResponseCommand())
-    assert res is None
-
-    assert len(writer.buffer) == 11
-    packet = JdwpCommandPacket.from_bytes(writer.buffer, b"")
-    assert packet.command_set == 99
-    assert packet.command == 98
-
-    await conn.close()
+async def test_mock_command_set() -> None:
+    """Verifies flow for mock commands without response types."""
+    await assert_command_roundtrip(
+        MockNoResponseCommand(),
+        None,
+    )
