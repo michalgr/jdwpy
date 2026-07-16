@@ -12,6 +12,7 @@ from jdwpy.constants import (
     JdwpClassStatus,
 )
 from jdwpy.spec import (
+    FrameID,
     IdSizesSpec,
     ObjectID,
     ReferenceTypeID,
@@ -27,6 +28,16 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    GetValuesCommand,
+    GetValuesResponse,
+    GetValuesRequestSlot,
+    SetValuesCommand,
+    SetValuesResponse,
+    SetValuesRequestSlot,
+    ThisObjectCommand,
+    ThisObjectResponse,
+    PopFramesCommand,
+    PopFramesResponse,
     ReflectedTypeCommand,
     ReflectedTypeResponse,
     get_command_class,
@@ -615,6 +626,71 @@ async def test_class_object_reference_command_set() -> None:
         ReflectedTypeResponse(
             ref_type_tag=JdwpTypeTag.CLASS, type_id=ReferenceTypeID(0x55667788)
         ),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_stack_frame_command_set() -> None:
+    """Verifies flow and serialization for commands in the StackFrame Command Set (Set 16)."""
+    spec = IdSizesSpec.create()
+
+    thread_id = ThreadID(0x11223344)
+    frame_id = FrameID(0x55667788)
+
+    # 1. GetValues Command
+    await assert_command_roundtrip(
+        GetValuesCommand(
+            thread=thread_id,
+            frame=frame_id,
+            slots=[
+                GetValuesRequestSlot(slot=0, sig_byte=JdwpTag.INT),
+                GetValuesRequestSlot(slot=1, sig_byte=JdwpTag.OBJECT),
+            ],
+        ),
+        GetValuesResponse(
+            values=[
+                JdwpValue(tag=JdwpTag.INT, value=42),
+                JdwpValue(tag=JdwpTag.OBJECT, value=ObjectID(0xDEADBEEF)),
+            ]
+        ),
+        spec=spec,
+    )
+
+    # 2. SetValues Command
+    await assert_command_roundtrip(
+        SetValuesCommand(
+            thread=thread_id,
+            frame=frame_id,
+            slots=[
+                SetValuesRequestSlot(
+                    slot=0, value=JdwpValue(tag=JdwpTag.INT, value=42)
+                ),
+                SetValuesRequestSlot(
+                    slot=1,
+                    value=JdwpValue(tag=JdwpTag.OBJECT, value=ObjectID(0xDEADBEEF)),
+                ),
+            ],
+        ),
+        SetValuesResponse(),
+        spec=spec,
+    )
+
+    # 3. ThisObject Command
+    await assert_command_roundtrip(
+        ThisObjectCommand(thread=thread_id, frame=frame_id),
+        ThisObjectResponse(
+            this_object=TaggedObjectID(
+                tag=JdwpTag.OBJECT, object_id=ObjectID(0xFEEDFACE)
+            )
+        ),
+        spec=spec,
+    )
+
+    # 4. PopFrames Command
+    await assert_command_roundtrip(
+        PopFramesCommand(thread=thread_id, frame=frame_id),
+        PopFramesResponse(),
         spec=spec,
     )
 
