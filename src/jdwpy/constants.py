@@ -131,3 +131,11 @@ class JdwpClassStatus(IntFlag):
     PREPARED = 2
     INITIALIZED = 4
     ERROR = 8
+
+
+class JdwpInvokeOptions(IntFlag):
+    """JDWP Method Invocation Options."""
+
+    NONE = 0
+    INVOKE_SINGLE_THREADED = 0x01
+    INVOKE_NONVIRTUAL = 0x02

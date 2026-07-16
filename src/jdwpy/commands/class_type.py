@@ -12,6 +12,7 @@ from jdwpy.spec import (
     TaggedObjectID,
     JdwpValue,
 )
+from jdwpy.constants import JdwpInvokeOptions
 
 
 @dataclass
@@ -131,7 +132,7 @@ class ClassTypeInvokeMethodCommand(JdwpCommand[ClassTypeInvokeMethodResponse]):
     thread: ThreadID
     method: MethodID
     arguments: list[JdwpValue]
-    options: int
+    options: JdwpInvokeOptions
 
     def serialize(self, writer: JdwpWriter) -> None:
         writer.write_class_id(self.clazz)
@@ -149,7 +150,7 @@ class ClassTypeInvokeMethodCommand(JdwpCommand[ClassTypeInvokeMethodResponse]):
         method = reader.read_method_id()
         num = reader.read_int()
         arguments = [reader.read_value() for _ in range(num)]
-        options = reader.read_int()
+        options = JdwpInvokeOptions(reader.read_int())
         return cls(
             clazz=clazz,
             thread=thread,
@@ -190,7 +191,7 @@ class NewInstanceCommand(JdwpCommand[NewInstanceResponse]):
     thread: ThreadID
     method: MethodID
     arguments: list[JdwpValue]
-    options: int
+    options: JdwpInvokeOptions
 
     def serialize(self, writer: JdwpWriter) -> None:
         writer.write_class_id(self.clazz)
@@ -208,7 +209,7 @@ class NewInstanceCommand(JdwpCommand[NewInstanceResponse]):
         method = reader.read_method_id()
         num = reader.read_int()
         arguments = [reader.read_value() for _ in range(num)]
-        options = reader.read_int()
+        options = JdwpInvokeOptions(reader.read_int())
         return cls(
             clazz=clazz,
             thread=thread,

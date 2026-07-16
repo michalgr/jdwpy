@@ -10,6 +10,7 @@ from jdwpy.constants import (
     JdwpTypeTag,
     JdwpTag,
     JdwpClassStatus,
+    JdwpInvokeOptions,
 )
 from jdwpy.spec import (
     ArrayTypeID,
@@ -34,6 +35,8 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    InterfaceTypeInvokeMethodCommand,
+    InterfaceTypeInvokeMethodResponse,
     ArrayTypeNewInstanceCommand,
     ArrayTypeNewInstanceResponse,
     SuperclassCommand,
@@ -982,7 +985,7 @@ async def test_class_type_command_set() -> None:
             thread=thread,
             method=method,
             arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
-            options=0x2,
+            options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
         ),
         ClassTypeInvokeMethodResponse(
             return_value=JdwpValue(tag=JdwpTag.INT, value=200),
@@ -998,7 +1001,7 @@ async def test_class_type_command_set() -> None:
             thread=thread,
             method=method,
             arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
-            options=0x2,
+            options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
         ),
         NewInstanceResponse(
             new_object=TaggedObjectID(
@@ -1019,6 +1022,28 @@ async def test_array_type_command_set() -> None:
     await assert_command_roundtrip(
         ArrayTypeNewInstanceCommand(arr_type=ArrayTypeID(0x11223344), length=10),
         ArrayTypeNewInstanceResponse(new_array=ArrayObjectID(0x55667788)),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_interface_type_command_set() -> None:
+    """Verifies flow and serialization for commands in the InterfaceType Command Set (Set 5)."""
+    spec = IdSizesSpec.create()
+
+    # 1. InvokeMethod Command
+    await assert_command_roundtrip(
+        InterfaceTypeInvokeMethodCommand(
+            clazz=InterfaceID(0x11223344),
+            thread=ThreadID(0x55667788),
+            method=MethodID(0x99AABBCC),
+            arguments=[JdwpValue(tag=JdwpTag.INT, value=100)],
+            options=JdwpInvokeOptions.INVOKE_NONVIRTUAL,
+        ),
+        InterfaceTypeInvokeMethodResponse(
+            return_value=JdwpValue(tag=JdwpTag.INT, value=200),
+            exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
+        ),
         spec=spec,
     )
 

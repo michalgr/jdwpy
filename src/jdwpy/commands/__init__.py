@@ -128,6 +128,10 @@ from jdwpy.commands.array_type import (
     ArrayTypeNewInstanceCommand,
     ArrayTypeNewInstanceResponse,
 )
+from jdwpy.commands.interface_type import (
+    InterfaceTypeInvokeMethodCommand,
+    InterfaceTypeInvokeMethodResponse,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -242,6 +246,8 @@ __all__ = [
     "NewInstanceResponse",
     "ArrayTypeNewInstanceCommand",
     "ArrayTypeNewInstanceResponse",
+    "InterfaceTypeInvokeMethodCommand",
+    "InterfaceTypeInvokeMethodResponse",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",
