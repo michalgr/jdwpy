@@ -9,6 +9,7 @@ from jdwpy.constants import (
     JdwpSuspendPolicy,
     JdwpTypeTag,
     JdwpTag,
+    JdwpClassStatus,
 )
 from jdwpy.spec import (
     IdSizesSpec,
@@ -19,6 +20,9 @@ from jdwpy.spec import (
     Location,
     TaggedObjectID,
     JdwpValue,
+    ThreadID,
+    ThreadGroupID,
+    StringID,
 )
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
@@ -58,6 +62,49 @@ from jdwpy.commands import (
     MethodExitEvent,
     MethodExitWithReturnValueEvent,
     MonitorContendedEnterEvent,
+    ClassesBySignatureCommand,
+    ClassesBySignatureResponse,
+    ClassesBySignatureEntry,
+    AllClassesCommand,
+    AllClassesResponse,
+    AllClassesEntry,
+    AllThreadsCommand,
+    AllThreadsResponse,
+    TopLevelThreadGroupsCommand,
+    TopLevelThreadGroupsResponse,
+    DisposeCommand,
+    DisposeResponse,
+    SuspendCommand,
+    SuspendResponse,
+    ResumeCommand,
+    ResumeResponse,
+    ExitCommand,
+    ExitResponse,
+    CreateStringCommand,
+    CreateStringResponse,
+    CapabilitiesCommand,
+    CapabilitiesResponse,
+    ClassPathsCommand,
+    ClassPathsResponse,
+    DisposeObjectsCommand,
+    DisposeObjectsResponse,
+    DisposeObjectsRequest,
+    HoldEventsCommand,
+    HoldEventsResponse,
+    ReleaseEventsCommand,
+    ReleaseEventsResponse,
+    CapabilitiesNewCommand,
+    CapabilitiesNewResponse,
+    RedefineClassesCommand,
+    RedefineClassesResponse,
+    RedefineClassesRequest,
+    SetDefaultStratumCommand,
+    SetDefaultStratumResponse,
+    AllClassesWithGenericCommand,
+    AllClassesWithGenericResponse,
+    AllClassesWithGenericEntry,
+    InstanceCountsCommand,
+    InstanceCountsResponse,
     MonitorContendedEnteredEvent,
     MonitorWaitEvent,
     MonitorWaitedEvent,
@@ -70,6 +117,7 @@ from jdwpy.commands import (
     FieldModificationEvent,
     VMDeathEvent,
 )
+
 from jdwpy.connection import (
     JdwpConnection,
     JdwpPacketConnection,
@@ -330,6 +378,232 @@ async def test_virtual_machine_command_set() -> None:
         frame_id_size=8,
     )
     await assert_command_roundtrip(IDSizesCommand(), resp_ids, spec=spec)
+
+    # 3. ClassesBySignature Command
+    classes_by_sig_resp = ClassesBySignatureResponse(
+        classes=[
+            ClassesBySignatureEntry(
+                ref_type_tag=JdwpTypeTag.CLASS,
+                type_id=ReferenceTypeID(42),
+                status=JdwpClassStatus.VERIFIED,
+            )
+        ]
+    )
+    await assert_command_roundtrip(
+        ClassesBySignatureCommand(signature="Ljava/lang/String;"),
+        classes_by_sig_resp,
+        spec=spec,
+    )
+
+    # 4. AllClasses Command
+    all_classes_resp = AllClassesResponse(
+        classes=[
+            AllClassesEntry(
+                ref_type_tag=JdwpTypeTag.CLASS,
+                type_id=ReferenceTypeID(42),
+                signature="Ljava/lang/String;",
+                status=JdwpClassStatus.VERIFIED,
+            )
+        ]
+    )
+    await assert_command_roundtrip(
+        AllClassesCommand(),
+        all_classes_resp,
+        spec=spec,
+    )
+
+    # 5. AllThreads Command
+    all_threads_resp = AllThreadsResponse(
+        threads=[ThreadID(42), ThreadID(43)]
+    )
+    await assert_command_roundtrip(
+        AllThreadsCommand(),
+        all_threads_resp,
+        spec=spec,
+    )
+
+    # 6. TopLevelThreadGroups Command
+    top_level_groups_resp = TopLevelThreadGroupsResponse(
+        groups=[ThreadGroupID(44)]
+    )
+    await assert_command_roundtrip(
+        TopLevelThreadGroupsCommand(),
+        top_level_groups_resp,
+        spec=spec,
+    )
+
+    # 7. Dispose Command
+    await assert_command_roundtrip(
+        DisposeCommand(),
+        DisposeResponse(),
+        spec=spec,
+    )
+
+    # 8. Suspend Command
+    await assert_command_roundtrip(
+        SuspendCommand(),
+        SuspendResponse(),
+        spec=spec,
+    )
+
+    # 9. Resume Command
+    await assert_command_roundtrip(
+        ResumeCommand(),
+        ResumeResponse(),
+        spec=spec,
+    )
+
+    # 10. Exit Command
+    await assert_command_roundtrip(
+        ExitCommand(exit_code=42),
+        ExitResponse(),
+        spec=spec,
+    )
+
+    # 11. CreateString Command
+    await assert_command_roundtrip(
+        CreateStringCommand(utf="hello"),
+        CreateStringResponse(string_object=StringID(45)),
+        spec=spec,
+    )
+
+    # 12. Capabilities Command
+    caps_resp = CapabilitiesResponse(
+        can_watch_field_modification=True,
+        can_watch_field_access=True,
+        can_get_bytecodes=True,
+        can_get_synthetic_attribute=True,
+        can_get_owned_monitor_info=True,
+        can_get_current_contended_monitor=True,
+        can_get_monitor_info=True,
+    )
+    await assert_command_roundtrip(
+        CapabilitiesCommand(),
+        caps_resp,
+        spec=spec,
+    )
+
+    # 13. ClassPaths Command
+    class_paths_resp = ClassPathsResponse(
+        base_dir="/base",
+        classpaths=["/cp1"],
+        bootclasspaths=["/bcp1"],
+    )
+    await assert_command_roundtrip(
+        ClassPathsCommand(),
+        class_paths_resp,
+        spec=spec,
+    )
+
+    # 14. DisposeObjects Command
+    await assert_command_roundtrip(
+        DisposeObjectsCommand(
+            requests=[DisposeObjectsRequest(object_id=ObjectID(46), ref_cnt=2)]
+        ),
+        DisposeObjectsResponse(),
+        spec=spec,
+    )
+
+    # 15. HoldEvents Command
+    await assert_command_roundtrip(
+        HoldEventsCommand(),
+        HoldEventsResponse(),
+        spec=spec,
+    )
+
+    # 16. ReleaseEvents Command
+    await assert_command_roundtrip(
+        ReleaseEventsCommand(),
+        ReleaseEventsResponse(),
+        spec=spec,
+    )
+
+    # 17. CapabilitiesNew Command
+    caps_new_resp = CapabilitiesNewResponse(
+        can_watch_field_modification=True,
+        can_watch_field_access=True,
+        can_get_bytecodes=True,
+        can_get_synthetic_attribute=True,
+        can_get_owned_monitor_info=True,
+        can_get_current_contended_monitor=True,
+        can_get_monitor_info=True,
+        can_redefine_classes=True,
+        can_add_method=True,
+        can_unrestrictedly_redefine_classes=True,
+        can_pop_frames=True,
+        can_use_instance_filters=True,
+        can_get_source_debug_extension=True,
+        can_request_vm_death_event=True,
+        can_set_default_stratum=True,
+        can_get_instance_info=True,
+        can_request_monitor_events=True,
+        can_get_monitor_frame_info=True,
+        can_use_source_name_filters=True,
+        can_get_constant_pool=True,
+        can_force_early_return=True,
+        reserved22=False,
+        reserved23=False,
+        reserved24=False,
+        reserved25=False,
+        reserved26=False,
+        reserved27=False,
+        reserved28=False,
+        reserved29=False,
+        reserved30=False,
+        reserved31=False,
+        reserved32=False,
+    )
+    await assert_command_roundtrip(
+        CapabilitiesNewCommand(),
+        caps_new_resp,
+        spec=spec,
+    )
+
+    # 18. RedefineClasses Command
+    await assert_command_roundtrip(
+        RedefineClassesCommand(
+            classes=[
+                RedefineClassesRequest(
+                    ref_type=ReferenceTypeID(47),
+                    class_bytes=b"\xca\xfe\xba\xbe",
+                )
+            ]
+        ),
+        RedefineClassesResponse(),
+        spec=spec,
+    )
+
+    # 19. SetDefaultStratum Command
+    await assert_command_roundtrip(
+        SetDefaultStratumCommand(stratum_id="Java"),
+        SetDefaultStratumResponse(),
+        spec=spec,
+    )
+
+    # 20. AllClassesWithGeneric Command
+    all_classes_generic_resp = AllClassesWithGenericResponse(
+        classes=[
+            AllClassesWithGenericEntry(
+                ref_type_tag=JdwpTypeTag.CLASS,
+                type_id=ReferenceTypeID(48),
+                signature="Ljava/util/List;",
+                generic_signature="Ljava/util/List<TE;>;",
+                status=JdwpClassStatus.VERIFIED,
+            )
+        ]
+    )
+    await assert_command_roundtrip(
+        AllClassesWithGenericCommand(),
+        all_classes_generic_resp,
+        spec=spec,
+    )
+
+    # 21. InstanceCounts Command
+    await assert_command_roundtrip(
+        InstanceCountsCommand(ref_types=[ReferenceTypeID(49)]),
+        InstanceCountsResponse(counts=[100]),
+        spec=spec,
+    )
 
 
 @pytest.mark.asyncio

@@ -13,6 +13,11 @@ ReferenceTypeID = NewType("ReferenceTypeID", int)
 FieldID = NewType("FieldID", int)
 MethodID = NewType("MethodID", int)
 FrameID = NewType("FrameID", int)
+ThreadID = NewType("ThreadID", int)
+ThreadGroupID = NewType("ThreadGroupID", int)
+StringID = NewType("StringID", int)
+ClassLoaderID = NewType("ClassLoaderID", int)
+ClassObjectID = NewType("ClassObjectID", int)
 
 
 @dataclass(frozen=True)

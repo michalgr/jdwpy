@@ -12,6 +12,9 @@ from jdwpy.spec import (
     Location,
     TaggedObjectID,
     JdwpValue,
+    ThreadID,
+    ThreadGroupID,
+    StringID,
 )
 
 
@@ -69,6 +72,18 @@ class JdwpReader:
     def read_object_id(self) -> ObjectID:
         """Reads a variable-length object ID."""
         return ObjectID(self._read_id(self.spec.object_id_struct))
+
+    def read_thread_id(self) -> ThreadID:
+        """Reads a variable-length thread ID."""
+        return ThreadID(self.read_object_id())
+
+    def read_thread_group_id(self) -> ThreadGroupID:
+        """Reads a variable-length thread group ID."""
+        return ThreadGroupID(self.read_object_id())
+
+    def read_string_id(self) -> StringID:
+        """Reads a variable-length string ID."""
+        return StringID(self.read_object_id())
 
     def read_reference_type_id(self) -> ReferenceTypeID:
         """Reads a variable-length reference type ID."""
@@ -193,6 +208,21 @@ class JdwpWriter:
     def write_object_id(self, val: ObjectID) -> Self:
         """Writes a variable-length object ID."""
         self._buffer.extend(self.spec.object_id_struct.pack(val))
+        return self
+
+    def write_thread_id(self, val: ThreadID) -> Self:
+        """Writes a variable-length thread ID."""
+        self.write_object_id(ObjectID(val))
+        return self
+
+    def write_thread_group_id(self, val: ThreadGroupID) -> Self:
+        """Writes a variable-length thread group ID."""
+        self.write_object_id(ObjectID(val))
+        return self
+
+    def write_string_id(self, val: StringID) -> Self:
+        """Writes a variable-length string ID."""
+        self.write_object_id(ObjectID(val))
         return self
 
     def write_reference_type_id(self, val: ReferenceTypeID) -> Self:

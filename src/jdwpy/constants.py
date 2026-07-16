@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 
 HANDSHAKE = b"JDWP-Handshake"
 
@@ -122,3 +122,12 @@ class JdwpTypeTag(IntEnum):
     CLASS = 1
     INTERFACE = 2
     ARRAY = 3
+
+
+class JdwpClassStatus(IntFlag):
+    """JDWP Class Status constants."""
+
+    VERIFIED = 1
+    PREPARED = 2
+    INITIALIZED = 4
+    ERROR = 8
