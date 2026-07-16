@@ -27,6 +27,8 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    ReflectedTypeCommand,
+    ReflectedTypeResponse,
     get_command_class,
     get_response_class,
     register_command,
@@ -598,6 +600,21 @@ async def test_virtual_machine_command_set() -> None:
     await assert_command_roundtrip(
         InstanceCountsCommand(ref_types=[ReferenceTypeID(49)]),
         InstanceCountsResponse(counts=[100]),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_class_object_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the ClassObjectReference Command Set (Set 17)."""
+    spec = IdSizesSpec.create()
+
+    # 1. ReflectedType Command
+    await assert_command_roundtrip(
+        ReflectedTypeCommand(class_object=ObjectID(0x11223344)),
+        ReflectedTypeResponse(
+            ref_type_tag=JdwpTypeTag.CLASS, type_id=ReferenceTypeID(0x55667788)
+        ),
         spec=spec,
     )
 

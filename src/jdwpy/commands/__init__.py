@@ -54,6 +54,10 @@ from jdwpy.commands.vm import (
     InstanceCountsCommand,
     InstanceCountsResponse,
 )
+from jdwpy.commands.class_object_reference import (
+    ReflectedTypeCommand,
+    ReflectedTypeResponse,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -104,6 +108,8 @@ __all__ = [
     "register_command",
     "get_command_class",
     "get_response_class",
+    "ReflectedTypeCommand",
+    "ReflectedTypeResponse",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",
