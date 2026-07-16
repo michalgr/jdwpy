@@ -38,6 +38,9 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    VisibleClassesCommand,
+    VisibleClassesResponse,
+    VisibleClassesEntry,
     ArrayRefLengthCommand,
     ArrayRefLengthResponse,
     ArrayRefGetValuesCommand,
@@ -1521,6 +1524,26 @@ async def test_array_reference_command_set() -> None:
             ],
         ),
         ArrayRefSetValuesResponse(),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_class_loader_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the ClassLoaderReference Command Set (Set 14)."""
+    spec = IdSizesSpec.create()
+
+    # 1. VisibleClasses Command
+    await assert_command_roundtrip(
+        VisibleClassesCommand(class_loader=ClassLoaderID(0x11223344)),
+        VisibleClassesResponse(
+            classes=[
+                VisibleClassesEntry(
+                    ref_type_tag=JdwpTypeTag.CLASS,
+                    type_id=ReferenceTypeID(0x55667788),
+                )
+            ]
+        ),
         spec=spec,
     )
 

@@ -221,6 +221,11 @@ from jdwpy.commands.array_reference import (
     ArrayRefSetValuesResponse,
     JdwpArrayRegion,
 )
+from jdwpy.commands.class_loader_reference import (
+    VisibleClassesCommand,
+    VisibleClassesResponse,
+    VisibleClassesEntry,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -414,6 +419,9 @@ __all__ = [
     "ArrayRefSetValuesCommand",
     "ArrayRefSetValuesResponse",
     "JdwpArrayRegion",
+    "VisibleClassesCommand",
+    "VisibleClassesResponse",
+    "VisibleClassesEntry",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",
