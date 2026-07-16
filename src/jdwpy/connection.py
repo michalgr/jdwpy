@@ -212,3 +212,9 @@ class JdwpConnection:
     async def close(self) -> None:
         """Closes the underlying packet connection."""
         await self._packet_conn.close()
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.close()

@@ -237,7 +237,7 @@ async def test_jdwp_connection_full_flow() -> None:
 
     # Verify command was sent
     assert len(writer.buffer) >= 11
-    packet = JdwpCommandPacket.parse(writer.buffer[:11], writer.buffer[11:])
+    packet = JdwpCommandPacket.from_bytes(writer.buffer[:11], writer.buffer[11:])
     assert packet.id == 1
     assert packet.command_set == 1
     assert packet.command == 7
@@ -298,7 +298,7 @@ async def test_jdwp_command_no_response() -> None:
     assert res is None
 
     assert len(writer.buffer) == 11
-    packet = JdwpCommandPacket.parse(writer.buffer, b"")
+    packet = JdwpCommandPacket.from_bytes(writer.buffer, b"")
     assert packet.command_set == 99
     assert packet.command == 98
 

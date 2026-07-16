@@ -2,17 +2,45 @@ from __future__ import annotations
 import asyncio
 import argparse
 import sys
+from dataclasses import dataclass
 from typing import Self
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.spec import IdSizesSpec
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
-from jdwpy.commands.registry import get_command_class
+from jdwpy.commands.registry import get_command_class, get_response_class
 from jdwpy.commands.vm import IDSizesResponse
 from jdwpy.connection import (
     JdwpPacketSender,
     JdwpPacketReceiver,
     establish_jdwp_connection,
 )
+
+
+@dataclass(frozen=True)
+class JdwpDirection:
+    label: str
+    arrow: str
+    color: str
+    reset: str = "\033[0m"
+
+
+DBG_TO_VM = JdwpDirection(label="Debugger -> VM", arrow=">>>", color="\033[92m")
+VM_TO_DBG = JdwpDirection(label="VM -> Debugger", arrow="<<<", color="\033[94m")
+
+
+def format_hexdump(data: bytes, prefix: str = "    ") -> str:
+    """Formats bytes into a standard hex dump string (like hexdump -C)."""
+    lines = []
+    for i in range(0, len(data), 16):
+        chunk = data[i : i + 16]
+        hex_part = " ".join(f"{b:02X}" for b in chunk)
+        # Add extra spacing between 8-byte groups
+        if len(chunk) > 8:
+            hex_part = hex_part[:23] + "  " + hex_part[23:]
+        hex_part = hex_part.ljust(49)
+        ascii_part = "".join(chr(b) if 32 <= b < 127 else "." for b in chunk)
+        lines.append(f"{prefix}{i:04X}  {hex_part}  |{ascii_part}|")
+    return "\n".join(lines)
 
 
 class JdwpProxySession:
@@ -24,6 +52,7 @@ class JdwpProxySession:
     vm_receiver: JdwpPacketReceiver
     spec: IdSizesSpec
     idsizes_cmd_ids: set[int]
+    outstanding_commands: dict[int, tuple[int, int]]
     close_event: asyncio.Event
 
     def __init__(
@@ -39,6 +68,7 @@ class JdwpProxySession:
         self.vm_receiver = vm_receiver
         self.spec = IdSizesSpec.create()  # Default standard 8-byte ID spec
         self.idsizes_cmd_ids = set()
+        self.outstanding_commands = {}
         self.close_event = asyncio.Event()
 
     @classmethod
@@ -75,11 +105,12 @@ class JdwpProxySession:
     async def _handle_debugger_packet(self, packet: JdwpPacket) -> None:
         """Processes and logs command packets sent from Debugger to VM."""
         if isinstance(packet, JdwpCommandPacket):
+            self.outstanding_commands[packet.id] = (packet.command_set, packet.command)
             if packet.command_set == 1 and packet.command == 7:
                 self.idsizes_cmd_ids.add(packet.id)
 
         await self.vm_sender.send_packet(packet)
-        self._log_packet(packet, "Debugger -> VM")
+        self._log_packet(packet, DBG_TO_VM)
 
     async def _handle_vm_packet(self, packet: JdwpPacket) -> None:
         """Processes, logs, and intercepts IDSizes responses sent from VM to Debugger."""
@@ -97,7 +128,9 @@ class JdwpProxySession:
                     )
 
         await self.dbg_sender.send_packet(packet)
-        self._log_packet(packet, "VM -> Debugger")
+        self._log_packet(packet, VM_TO_DBG)
+        if isinstance(packet, JdwpReplyPacket):
+            self.outstanding_commands.pop(packet.id, None)
 
     async def _handle_debugger_exception(self, exc: Exception) -> None:
         """Handles debugger socket read failure by logging and triggering shutdown."""
@@ -132,36 +165,81 @@ class JdwpProxySession:
             await self.dbg_sender.close()
             await self.vm_sender.close()
 
-    def _log_packet(self, packet: JdwpPacket, label: str) -> None:
-        arrow = ">>>" if "Debugger" in label else "<<<"
-        color_start = "\033[92m" if "Debugger" in label else "\033[94m"
-        color_end = "\033[0m"
-
+    def _log_packet(self, packet: JdwpPacket, direction: JdwpDirection) -> None:
+        raw_str = ""
+        parsed_str = ""
         if isinstance(packet, JdwpCommandPacket):
-            cmd_cls = get_command_class(packet.command_set, packet.command)
-            cmd_name = (
-                cmd_cls.__name__
-                if cmd_cls
-                else f"UnknownCmd({packet.command_set}:{packet.command})"
-            )
-            print(
-                f"{color_start}{arrow} [Command]{color_end} "
-                f"ID: {packet.id:<4} | {cmd_name:<18} | Set: {packet.command_set:<2} Cmd: {packet.command:<2} | "
-                f"Payload: {len(packet.data):<3} bytes"
-            )
+            raw_str = self._format_raw_command(packet, direction)
+            parsed_str = self._format_parsed_command(packet)
         elif isinstance(packet, JdwpReplyPacket):
-            err_val = packet.error_code
-            err_enum = (
-                JdwpErrorCode(err_val)
-                if err_val in JdwpErrorCode.__members__.values()
-                else None
-            )
-            err_name = err_enum.name if err_enum else f"Unknown({err_val})"
-            print(
-                f"{color_start}{arrow} [Reply  ]{color_end} "
-                f"ID: {packet.id:<4} | Error: {err_name:<18} | Code: {err_val:<4} | "
-                f"Payload: {len(packet.data):<3} bytes"
-            )
+            raw_str = self._format_raw_reply(packet, direction)
+            parsed_str = self._format_parsed_reply(packet)
+
+        # Print all packet components in one unified block
+        print(raw_str)
+        raw_bytes = packet.to_bytes()
+        print(format_hexdump(raw_bytes, prefix="      "))
+        if parsed_str:
+            print(parsed_str)
+        print()
+
+    def _format_raw_command(
+        self, packet: JdwpCommandPacket, direction: JdwpDirection
+    ) -> str:
+        cmd_cls = get_command_class(packet.command_set, packet.command)
+        cmd_name = (
+            cmd_cls.__name__
+            if cmd_cls
+            else f"UnknownCmd({packet.command_set}:{packet.command})"
+        )
+        return (
+            f"{direction.color}{direction.arrow} [Command]{direction.reset} "
+            f"ID: {packet.id:<4} | {cmd_name:<18} | Set: {packet.command_set:<2} Cmd: {packet.command:<2} | "
+            f"Payload: {len(packet.data):<3} bytes"
+        )
+
+    def _format_parsed_command(self, packet: JdwpCommandPacket) -> str:
+        cmd_cls = get_command_class(packet.command_set, packet.command)
+        if cmd_cls and len(packet.data) > 0:
+            try:
+                cmd_obj = cmd_cls.from_bytes(packet.data, self.spec)
+                return f"      Parsed: {cmd_obj}"
+            except Exception as e:
+                return f"      [Parse Error: {e}]"
+        return ""
+
+    def _format_raw_reply(
+        self, packet: JdwpReplyPacket, direction: JdwpDirection
+    ) -> str:
+        err_val = packet.error_code
+        err_enum = (
+            JdwpErrorCode(err_val)
+            if err_val in JdwpErrorCode.__members__.values()
+            else None
+        )
+        err_name = err_enum.name if err_enum else f"Unknown({err_val})"
+        return (
+            f"{direction.color}{direction.arrow} [Reply  ]{direction.reset} "
+            f"ID: {packet.id:<4} | Error: {err_name:<18} | Code: {err_val:<4} | "
+            f"Payload: {len(packet.data):<3} bytes"
+        )
+
+    def _format_parsed_reply(self, packet: JdwpReplyPacket) -> str:
+        err_val = packet.error_code
+        # Match reply back to its original command
+        cmd_info = self.outstanding_commands.get(packet.id)
+        if cmd_info and err_val == JdwpErrorCode.NONE and len(packet.data) > 0:
+            cmd_set, cmd_cmd = cmd_info
+            cmd_cls = get_command_class(cmd_set, cmd_cmd)
+            if cmd_cls:
+                resp_cls = get_response_class(cmd_cls)
+                if resp_cls:
+                    try:
+                        resp_obj = resp_cls.from_bytes(packet.data, self.spec)
+                        return f"      Parsed: {resp_obj}"
+                    except Exception as e:
+                        return f"      [Parse Error: {e}]"
+        return ""
 
 
 async def main() -> None:
@@ -203,6 +281,16 @@ async def main() -> None:
                 reader, writer, args.target_host, args.target_port
             )
             await session.run()
+        except asyncio.IncompleteReadError as e:
+            if e.partial:
+                print(
+                    f"[-] Session error in {peer}: JDWP Handshake incomplete (read {len(e.partial)} of {e.expected} bytes)",
+                    file=sys.stderr,
+                )
+            else:
+                print(f"[*] Client {peer} disconnected before JDWP handshake.")
+            writer.close()
+            await writer.wait_closed()
         except Exception as e:
             print(f"[-] Session error in {peer}: {e}", file=sys.stderr)
             writer.close()
