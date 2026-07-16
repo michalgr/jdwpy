@@ -2,8 +2,9 @@ from __future__ import annotations
 import asyncio
 import argparse
 import sys
+import logging
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, Callable
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.spec import IdSizesSpec
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
@@ -14,6 +15,9 @@ from jdwpy.connection import (
     JdwpPacketReceiver,
     establish_jdwp_connection,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -55,12 +59,15 @@ class JdwpProxySession:
     outstanding_commands: dict[int, tuple[int, int]]
     close_event: asyncio.Event
 
+    on_packet_log: Callable[[JdwpPacket, JdwpDirection, str], None] | None
+
     def __init__(
         self,
         dbg_sender: JdwpPacketSender,
         dbg_receiver: JdwpPacketReceiver,
         vm_sender: JdwpPacketSender,
         vm_receiver: JdwpPacketReceiver,
+        on_packet_log: Callable[[JdwpPacket, JdwpDirection, str], None] | None = None,
     ) -> None:
         self.dbg_sender = dbg_sender
         self.dbg_receiver = dbg_receiver
@@ -70,6 +77,7 @@ class JdwpProxySession:
         self.idsizes_cmd_ids = set()
         self.outstanding_commands = {}
         self.close_event = asyncio.Event()
+        self.on_packet_log = on_packet_log
 
     @classmethod
     async def create(
@@ -78,13 +86,14 @@ class JdwpProxySession:
         dbg_writer: asyncio.StreamWriter,
         target_host: str,
         target_port: int,
+        on_packet_log: Callable[[JdwpPacket, JdwpDirection, str], None] | None = None,
     ) -> Self:
         """Factory method that establishes JVM connections and runs bi-directional handshakes."""
         # 1. Connect to JVM JDWP agent and run handshake
         vm_sender, vm_receiver = await establish_jdwp_connection(
             target_host, target_port
         )
-        print(f"[*] Connected to target JVM at {target_host}:{target_port}")
+        logger.info(f"Connected to target JVM at {target_host}:{target_port}")
 
         # 2. Negotiate debugger client handshake
         dbg_handshake = await dbg_reader.readexactly(len(HANDSHAKE))
@@ -94,13 +103,19 @@ class JdwpProxySession:
             )
         dbg_writer.write(HANDSHAKE)
         await dbg_writer.drain()
-        print("[*] Bi-directional JDWP Handshake completed successfully!")
+        logger.info("Bi-directional JDWP Handshake completed successfully!")
 
         # 3. Initialize wrapper objects
         dbg_sender = JdwpPacketSender(dbg_writer)
         dbg_receiver = JdwpPacketReceiver(dbg_reader)
 
-        return cls(dbg_sender, dbg_receiver, vm_sender, vm_receiver)
+        return cls(
+            dbg_sender,
+            dbg_receiver,
+            vm_sender,
+            vm_receiver,
+            on_packet_log=on_packet_log,
+        )
 
     async def _handle_debugger_packet(self, packet: JdwpPacket) -> None:
         """Processes and logs command packets sent from Debugger to VM."""
@@ -120,11 +135,11 @@ class JdwpProxySession:
                 if packet.error_code == 0:
                     resp = IDSizesResponse.from_bytes(packet.data, self.spec)
                     self.spec = IdSizesSpec.from_response(resp)
-                    print(
-                        f"\033[93m[*] Proxy intercepted IDSizes Reply - Dynamically updated Spec:\n"
+                    logger.info(
+                        "Proxy intercepted IDSizes Reply - Dynamically updated Spec:\n"
                         f"    field={resp.field_id_size} method={resp.method_id_size} "
                         f"object={resp.object_id_size} refType={resp.reference_type_id_size} "
-                        f"frame={resp.frame_id_size}\033[0m"
+                        f"frame={resp.frame_id_size}"
                     )
 
         await self.dbg_sender.send_packet(packet)
@@ -135,17 +150,17 @@ class JdwpProxySession:
     async def _handle_debugger_exception(self, exc: Exception) -> None:
         """Handles debugger socket read failure by logging and triggering shutdown."""
         if isinstance(exc, asyncio.IncompleteReadError):
-            print("[*] Debugger client closed connection.")
+            logger.info("Debugger client closed connection.")
         else:
-            print(f"[-] Debugger client connection error: {exc}", file=sys.stderr)
+            logger.error(f"Debugger client connection error: {exc}")
         self.close_event.set()
 
     async def _handle_vm_exception(self, exc: Exception) -> None:
         """Handles VM socket read failure by logging and triggering shutdown."""
         if isinstance(exc, asyncio.IncompleteReadError):
-            print("[*] Target JVM closed connection.")
+            logger.info("Target JVM closed connection.")
         else:
-            print(f"[-] Target JVM connection error: {exc}", file=sys.stderr)
+            logger.error(f"Target JVM connection error: {exc}")
         self.close_event.set()
 
     async def run(self) -> None:
@@ -175,13 +190,19 @@ class JdwpProxySession:
             raw_str = self._format_raw_reply(packet, direction)
             parsed_str = self._format_parsed_reply(packet)
 
-        # Print all packet components in one unified block
-        print(raw_str)
+        # Build packet log message block
         raw_bytes = packet.to_bytes()
-        print(format_hexdump(raw_bytes, prefix="      "))
+        hexdump_str = format_hexdump(raw_bytes, prefix="      ")
+
+        log_lines = [raw_str, hexdump_str]
         if parsed_str:
-            print(parsed_str)
-        print()
+            log_lines.append(parsed_str)
+        log_msg = "\n".join(log_lines)
+
+        if self.on_packet_log:
+            self.on_packet_log(packet, direction, log_msg)
+        else:
+            logger.debug(log_msg)
 
     def _format_raw_command(
         self, packet: JdwpCommandPacket, direction: JdwpDirection
@@ -264,10 +285,25 @@ async def main() -> None:
         default=8700,
         help="Target JVM JDWP Port (default: 8700)",
     )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose packet-level logging (debug level)",
+    )
     args = parser.parse_args()
 
-    print(f"[*] Starting JDWP Logging Proxy on port {args.listen_port}...")
-    print(
+    # Configure root logger with simple message format
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.addHandler(handler)
+
+    logger.info(f"[*] Starting JDWP Logging Proxy on port {args.listen_port}...")
+    logger.info(
         f"[*] Forwarding traffic to JVM JDWP agent at {args.target_host}:{args.target_port}"
     )
 
@@ -275,7 +311,7 @@ async def main() -> None:
         reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
         peer = writer.get_extra_info("peername")
-        print(f"[*] Accepted debugger client connection from {peer}")
+        logger.info(f"[*] Accepted debugger client connection from {peer}")
         try:
             session = await JdwpProxySession.create(
                 reader, writer, args.target_host, args.target_port
@@ -283,20 +319,19 @@ async def main() -> None:
             await session.run()
         except asyncio.IncompleteReadError as e:
             if e.partial:
-                print(
-                    f"[-] Session error in {peer}: JDWP Handshake incomplete (read {len(e.partial)} of {e.expected} bytes)",
-                    file=sys.stderr,
+                logger.error(
+                    f"[-] Session error in {peer}: JDWP Handshake incomplete (read {len(e.partial)} of {e.expected} bytes)"
                 )
             else:
-                print(f"[*] Client {peer} disconnected before JDWP handshake.")
+                logger.info(f"[*] Client {peer} disconnected before JDWP handshake.")
             writer.close()
             await writer.wait_closed()
         except Exception as e:
-            print(f"[-] Session error in {peer}: {e}", file=sys.stderr)
+            logger.error(f"[-] Session error in {peer}: {e}")
             writer.close()
             await writer.wait_closed()
         finally:
-            print(f"[*] Session closed for client {peer}")
+            logger.info(f"[*] Session closed for client {peer}")
 
     server = await asyncio.start_server(client_connected, "127.0.0.1", args.listen_port)
     async with server:
