@@ -20,6 +20,8 @@ ClassLoaderID = NewType("ClassLoaderID", int)
 ClassObjectID = NewType("ClassObjectID", int)
 InterfaceID = NewType("InterfaceID", int)
 ClassID = NewType("ClassID", int)
+ArrayTypeID = NewType("ArrayTypeID", int)
+ArrayObjectID = NewType("ArrayObjectID", int)
 
 
 @dataclass(frozen=True)

@@ -12,6 +12,8 @@ from jdwpy.constants import (
     JdwpClassStatus,
 )
 from jdwpy.spec import (
+    ArrayTypeID,
+    ArrayObjectID,
     ClassID,
     ClassLoaderID,
     ClassObjectID,
@@ -32,6 +34,8 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    ArrayTypeNewInstanceCommand,
+    ArrayTypeNewInstanceResponse,
     SuperclassCommand,
     SuperclassResponse,
     ClassTypeSetValuesCommand,
@@ -1002,6 +1006,19 @@ async def test_class_type_command_set() -> None:
             ),
             exception=TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0)),
         ),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_array_type_command_set() -> None:
+    """Verifies flow and serialization for commands in the ArrayType Command Set (Set 4)."""
+    spec = IdSizesSpec.create()
+
+    # 1. NewInstance Command
+    await assert_command_roundtrip(
+        ArrayTypeNewInstanceCommand(arr_type=ArrayTypeID(0x11223344), length=10),
+        ArrayTypeNewInstanceResponse(new_array=ArrayObjectID(0x55667788)),
         spec=spec,
     )
 
