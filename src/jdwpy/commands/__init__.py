@@ -168,6 +168,10 @@ from jdwpy.commands.object_reference import (
     ReferringObjectsCommand,
     ReferringObjectsResponse,
 )
+from jdwpy.commands.string_reference import (
+    StringReferenceValueCommand,
+    StringReferenceValueResponse,
+)
 from jdwpy.commands.event_request import (
     EventModifier,
     CountModifier,
@@ -316,6 +320,8 @@ __all__ = [
     "IsCollectedResponse",
     "ReferringObjectsCommand",
     "ReferringObjectsResponse",
+    "StringReferenceValueCommand",
+    "StringReferenceValueResponse",
     "VersionCommand",
     "VersionResponse",
     "ClassesBySignatureCommand",

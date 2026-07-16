@@ -35,6 +35,8 @@ from jdwpy.spec import (
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.commands import (
+    StringReferenceValueCommand,
+    StringReferenceValueResponse,
     ObjectRefReferenceTypeCommand,
     ObjectRefReferenceTypeResponse,
     ObjectRefGetValuesCommand,
@@ -1249,6 +1251,19 @@ async def test_object_reference_command_set() -> None:
                 TaggedObjectID(tag=JdwpTag.OBJECT, object_id=ObjectID(0xFEED))
             ]
         ),
+        spec=spec,
+    )
+
+
+@pytest.mark.asyncio
+async def test_string_reference_command_set() -> None:
+    """Verifies flow and serialization for commands in the StringReference Command Set (Set 10)."""
+    spec = IdSizesSpec.create()
+
+    # 1. Value Command
+    await assert_command_roundtrip(
+        StringReferenceValueCommand(string_object=StringID(0x11223344)),
+        StringReferenceValueResponse(string_value="Hello World"),
         spec=spec,
     )
 
