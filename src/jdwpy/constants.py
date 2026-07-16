@@ -40,6 +40,14 @@ class JdwpTag(IntEnum):
 class JdwpErrorCode(IntEnum):
     """JDWP Error Codes mapped to their standard protocol definitions."""
 
+    @classmethod
+    def from_int(cls, val: int) -> JdwpErrorCode | None:
+        """Returns the corresponding JdwpErrorCode or None if unknown."""
+        try:
+            return cls(val)
+        except ValueError:
+            return None
+
     NONE = 0
     INVALID_THREAD = 10
     INVALID_THREAD_GROUP = 11

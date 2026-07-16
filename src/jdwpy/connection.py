@@ -1,9 +1,13 @@
 from __future__ import annotations
 import asyncio
+import logging
 from typing import Callable, Awaitable, Self, overload, Any
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
 from jdwpy.spec import IdSizesSpec
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
+
+logger = logging.getLogger(__name__)
+
 from jdwpy.commands.base import JdwpCommand, JdwpResponse
 from jdwpy.commands.registry import get_response_class, get_command_class
 from jdwpy.commands.vm import IDSizesResponse
@@ -195,9 +199,19 @@ class JdwpConnection:
 
         # Validate error code
         if reply.error_code != JdwpErrorCode.NONE:
+            err_code = JdwpErrorCode.from_int(reply.error_code)
+
+            if err_code is None or err_code not in cmd.ALLOWED_ERRORS:
+                logger.warning(
+                    "Received unexpected JDWP error code %s (%d) for command %s",
+                    err_code.name if err_code else "UNKNOWN",
+                    reply.error_code,
+                    cmd.__class__.__name__,
+                )
+
             raise RuntimeError(
                 f"JDWP Command {cmd.__class__.__name__} failed with error: "
-                f"{JdwpErrorCode(reply.error_code).name} ({reply.error_code})"
+                f"{err_code.name if err_code else 'UNKNOWN'} ({reply.error_code})"
             )
 
         # Deserialize response

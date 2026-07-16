@@ -1636,3 +1636,44 @@ async def test_composite_events_roundtrip() -> None:
     )
 
     await assert_command_roundtrip(composite, None, spec=spec)
+
+
+@pytest.mark.asyncio
+async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """Verifies that receiving a JDWP error not listed in the command's ALLOWED_ERRORS logs a warning."""
+    import logging
+
+    spec = IdSizesSpec.create()
+    conn, reader, writer = create_mock_connection(spec)
+
+    async with conn:
+        # Launch VersionCommand which only allows VM_DEAD and NONE
+        task = asyncio.create_task(conn.send_command(commands.vm.VersionCommand()))
+        await asyncio.sleep(0)
+
+        # Parse command packet to get ID
+        packet = parse_command_packet(writer.buffer)
+
+        # Feed an invalid reply with an unexpected error: INVALID_THREAD (10)
+        reply = JdwpReplyPacket(
+            id=packet.id,
+            flags=0x80,
+            error_code=JdwpErrorCode.INVALID_THREAD,
+            data=b"",
+        )
+        reader.feed_data(reply.to_bytes())
+
+        # Assert that executing the task raises RuntimeError
+        with pytest.raises(RuntimeError) as exc_info:
+            await task
+
+        assert "failed with error: INVALID_THREAD" in str(exc_info.value)
+
+        # Assert that a warning was captured in log
+        warnings = [
+            rec
+            for rec in caplog.records
+            if rec.levelno == logging.WARNING
+            and "Received unexpected JDWP error code INVALID_THREAD" in rec.message
+        ]
+        assert len(warnings) == 1
