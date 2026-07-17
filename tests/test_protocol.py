@@ -43,6 +43,7 @@ from jdwpy.connection import (
     JdwpPacketConnection,
     JdwpPacketSender,
     JdwpPacketReceiver,
+    JdwpConnectionRunner,
 )
 
 
@@ -75,8 +76,9 @@ def create_mock_connection(
     sender = JdwpPacketSender(writer)  # type: ignore
     receiver = JdwpPacketReceiver(reader)
     packet_conn = JdwpPacketConnection(sender, receiver)
-    packet_conn.start()
-    conn = JdwpConnection(packet_conn, spec=spec)
+    runner = JdwpConnectionRunner(packet_conn)
+    runner.start()
+    conn = JdwpConnection(packet_conn, runner=runner, spec=spec)
     return conn, reader, writer
 
 

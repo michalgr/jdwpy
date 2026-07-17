@@ -117,6 +117,26 @@ class JdwpProxySession:
             on_packet_log=on_packet_log,
         )
 
+    async def _run_dbg_loop(self) -> None:
+        try:
+            while not self.close_event.is_set():
+                packet = await self.dbg_receiver.receive()
+                await self._handle_debugger_packet(packet)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            await self._handle_debugger_exception(e)
+
+    async def _run_vm_loop(self) -> None:
+        try:
+            while not self.close_event.is_set():
+                packet = await self.vm_receiver.receive()
+                await self._handle_vm_packet(packet)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            await self._handle_vm_exception(e)
+
     async def _handle_debugger_packet(self, packet: JdwpPacket) -> None:
         """Processes and logs command packets sent from Debugger to VM."""
         if isinstance(packet, JdwpCommandPacket):
@@ -124,7 +144,7 @@ class JdwpProxySession:
             if packet.command_set == 1 and packet.command == 7:
                 self.idsizes_cmd_ids.add(packet.id)
 
-        await self.vm_sender.send_packet(packet)
+        await self.vm_sender.send(packet)
         self._log_packet(packet, DBG_TO_VM)
 
     async def _handle_vm_packet(self, packet: JdwpPacket) -> None:
@@ -142,7 +162,7 @@ class JdwpProxySession:
                         f"frame={resp.frame_id_size}"
                     )
 
-        await self.dbg_sender.send_packet(packet)
+        await self.dbg_sender.send(packet)
         self._log_packet(packet, VM_TO_DBG)
         if isinstance(packet, JdwpReplyPacket):
             self.outstanding_commands.pop(packet.id, None)
@@ -165,18 +185,17 @@ class JdwpProxySession:
 
     async def run(self) -> None:
         """Orchestrates connection negotiation, packet routing, and graceful cleanup."""
+        dbg_task = asyncio.create_task(self._run_dbg_loop())
+        vm_task = asyncio.create_task(self._run_vm_loop())
         try:
-            # 1. Start proxy receiver loops
-            self.dbg_receiver.start(
-                self._handle_debugger_packet, self._handle_debugger_exception
-            )
-            self.vm_receiver.start(self._handle_vm_packet, self._handle_vm_exception)
-
-            # 2. Wait for termination and close resources cleanly
+            # Wait for termination and close resources cleanly
             await self.close_event.wait()
         finally:
-            self.dbg_receiver.close()
-            self.vm_receiver.close()
+            dbg_task.cancel()
+            vm_task.cancel()
+            await asyncio.gather(dbg_task, vm_task, return_exceptions=True)
+            await self.dbg_receiver.close()
+            await self.vm_receiver.close()
             await self.dbg_sender.close()
             await self.vm_sender.close()
 
