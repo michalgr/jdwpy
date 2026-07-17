@@ -70,15 +70,15 @@ class MockStreamWriter:
 def create_mock_connection(
     spec: IdSizesSpec | None = None,
 ) -> tuple[JdwpConnection, asyncio.StreamReader, MockStreamWriter]:
-    """Helper factory that constructs all JDWP connection mock objects and starts the loop."""
+    """Helper factory that constructs all JDWP connection mock objects."""
     reader = asyncio.StreamReader()
     writer = MockStreamWriter()
     sender = JdwpPacketSender(writer)  # type: ignore
     receiver = JdwpPacketReceiver(reader)
     packet_conn = JdwpPacketConnection(sender, receiver)
-    runner = JdwpConnectionRunner(packet_conn)
+    conn = JdwpConnection(packet_conn, spec=spec)
+    runner = JdwpConnectionRunner(conn)
     runner.start()
-    conn = JdwpConnection(packet_conn, runner=runner, spec=spec)
     return conn, reader, writer
 
 

@@ -5,10 +5,11 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 import pytest
+from typing import Any
 
 from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy, JdwpTag
 from jdwpy import commands
-from jdwpy.connection import JdwpConnection
+from jdwpy.connection import JdwpConnection, JdwpConnectionRunner
 from jdwpy.proxy import JdwpProxySession
 from jdwpy.spec import Location
 from jdwpy.testing import compile_java, find_free_port, wait_for_port
@@ -57,12 +58,14 @@ def running_jvm_debuggee():
                 proc.wait()
 
 
-async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
+async def assert_jdwp_session_flow(
+    conn: JdwpConnection, runner: JdwpConnectionRunner[Any]
+) -> None:
     """Establishes JDWP connection, sets class prep request, inspects methods,
     sets breakpoint on testMethod, and verifies stack trace and iteration parameter.
     """
     # 0. Read startup VM_START composite event command
-    event = await conn.read_command()
+    event = await runner.command_queue.get()
     assert isinstance(event, commands.event.CompositeCommand)
     assert len(event.events) == 1
     assert isinstance(event.events[0], commands.event.VMStartEvent)
@@ -87,7 +90,7 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
     await conn.send_command(commands.vm.ResumeCommand())
 
     # 4. Read ClassPrepareEvent for SimpleApp
-    event_cmd = await conn.read_command()
+    event_cmd = await runner.command_queue.get()
     assert isinstance(event_cmd, commands.event.CompositeCommand)
     class_prep = event_cmd.events[0]
     assert isinstance(class_prep, commands.event.ClassPrepareEvent)
@@ -131,7 +134,7 @@ async def assert_jdwp_session_flow(conn: JdwpConnection) -> None:
         await conn.send_command(commands.vm.ResumeCommand())
 
         # Wait for breakpoint hit
-        bp_event_cmd = await conn.read_command()
+        bp_event_cmd = await runner.command_queue.get()
         assert isinstance(bp_event_cmd, commands.event.CompositeCommand)
         bp_event = bp_event_cmd.events[0]
         assert isinstance(bp_event, commands.event.BreakpointEvent)
@@ -191,7 +194,12 @@ async def test_direct_jdwp_connection() -> None:
     with running_jvm_debuggee() as (port, proc):
         # 1. Connect directly to JVM JDWP agent
         async with await JdwpConnection.connect("127.0.0.1", port) as conn:
-            await assert_jdwp_session_flow(conn)
+            runner = JdwpConnectionRunner(conn)
+            runner.start()
+            try:
+                await assert_jdwp_session_flow(conn, runner)
+            finally:
+                runner.close()
 
 
 @pytest.mark.asyncio
@@ -215,4 +223,9 @@ async def test_proxied_jdwp_connection() -> None:
         # 3. Use async context managers to manage server and client connections
         async with server:
             async with await JdwpConnection.connect("127.0.0.1", proxy_port) as conn:
-                await assert_jdwp_session_flow(conn)
+                runner = JdwpConnectionRunner(conn)
+                runner.start()
+                try:
+                    await assert_jdwp_session_flow(conn, runner)
+                finally:
+                    runner.close()
