@@ -12,7 +12,7 @@ def register_command(response_class: type[JdwpResponse] | None = None):
     """Decorator to register a JdwpCommand concrete subclass and its response type mapping."""
 
     def decorator[C: type[JdwpCommand[Any]]](cls: C) -> C:
-        _COMMAND_REGISTRY[(cls.COMMAND_SET, cls.COMMAND)] = cls
+        _COMMAND_REGISTRY[(cls.COMMAND_SET, cls.COMMAND)] = cls  # type: ignore
         if response_class is not None:
             _COMMAND_TO_RESPONSE[cls] = response_class
         return cls

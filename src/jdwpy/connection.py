@@ -290,7 +290,7 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
     """
 
     delegate: DefaultJdwpConnection
-    _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
+    _incoming_commands: asyncio.Queue[JdwpCommand[Any] | None]
     _read_task: asyncio.Task | None
     _read_exception: Exception | None
 
