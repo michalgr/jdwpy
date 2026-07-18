@@ -40,10 +40,11 @@ from jdwpy import commands, JdwpException
 
 from jdwpy.connection import (
     JdwpConnection,
+    DefaultJdwpConnection,
+    JdwpConnectionWithAsyncLoop,
     JdwpPacketConnection,
-    JdwpPacketSender,
-    JdwpPacketReceiver,
-    JdwpSession,
+    StreamJdwpPacketSender,
+    StreamJdwpPacketReceiver,
 )
 
 
@@ -69,15 +70,15 @@ class MockStreamWriter:
 
 def create_mock_session(
     spec: IdSizesSpec | None = None,
-) -> tuple[JdwpSession, asyncio.StreamReader, MockStreamWriter]:
+) -> tuple[JdwpConnectionWithAsyncLoop, asyncio.StreamReader, MockStreamWriter]:
     """Helper factory that constructs all JDWP session mock objects."""
     reader = asyncio.StreamReader()
     writer = MockStreamWriter()
-    sender = JdwpPacketSender(writer)  # type: ignore
-    receiver = JdwpPacketReceiver(reader)
+    sender = StreamJdwpPacketSender(writer)  # type: ignore
+    receiver = StreamJdwpPacketReceiver(reader)
     packet_conn = JdwpPacketConnection(sender, receiver)
-    conn = JdwpConnection(packet_conn, spec=spec)
-    session = JdwpSession(conn)
+    conn = DefaultJdwpConnection(packet_conn, spec=spec)
+    session = JdwpConnectionWithAsyncLoop(conn)
     session.start()
     return session, reader, writer
 
@@ -121,7 +122,7 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
 
         # Deserialize the bytes written to the writer, verifying they reconstruct the command
         deserialized_command = command.__class__.from_bytes(
-            packet.data, session.connection.spec
+            packet.data, session.delegate.spec
         )
         assert deserialized_command == command
 
@@ -131,7 +132,7 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
 
         if response_class is not None:
             assert expected_response is not None
-            serialized_response = expected_response.to_bytes(session.connection.spec)
+            serialized_response = expected_response.to_bytes(session.delegate.spec)
             feed_reply(reader, packet.id, serialized_response)
 
         response = await task
@@ -141,22 +142,18 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
 
         # Verify dynamic spec updates when commands.vm.IDSizesResponse is received
         if isinstance(response, commands.vm.IDSizesResponse):
+            assert session.delegate.spec.field_id_struct.size == response.field_id_size
             assert (
-                session.connection.spec.field_id_struct.size == response.field_id_size
+                session.delegate.spec.object_id_struct.size == response.object_id_size
             )
             assert (
-                session.connection.spec.object_id_struct.size == response.object_id_size
+                session.delegate.spec.method_id_struct.size == response.method_id_size
             )
             assert (
-                session.connection.spec.method_id_struct.size == response.method_id_size
-            )
-            assert (
-                session.connection.spec.reference_type_id_struct.size
+                session.delegate.spec.reference_type_id_struct.size
                 == response.reference_type_id_size
             )
-            assert (
-                session.connection.spec.frame_id_struct.size == response.frame_id_size
-            )
+            assert session.delegate.spec.frame_id_struct.size == response.frame_id_size
 
 
 def test_id_sizes_spec_struct_compilation() -> None:

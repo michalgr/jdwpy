@@ -9,7 +9,7 @@ from typing import Any
 
 from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy, JdwpTag
 from jdwpy import commands
-from jdwpy.connection import JdwpSession
+from jdwpy.connection import JdwpConnection
 from jdwpy.proxy import JdwpProxySession
 from jdwpy.spec import Location
 from jdwpy.testing import compile_java, find_free_port, wait_for_port
@@ -58,7 +58,7 @@ def running_jvm_debuggee():
                 proc.wait()
 
 
-async def assert_jdwp_session_flow(session: JdwpSession) -> None:
+async def assert_jdwp_session_flow(session: JdwpConnection) -> None:
     """Establishes JDWP connection, sets class prep request, inspects methods,
     sets breakpoint on testMethod, and verifies stack trace and iteration parameter.
     """
@@ -191,7 +191,7 @@ async def test_direct_jdwp_connection() -> None:
     """Verifies that we can connect directly to a JVM JDWP agent, exchange version & id size packets."""
     with running_jvm_debuggee() as (port, proc):
         # 1. Connect directly to JVM JDWP agent
-        async with await JdwpSession.connect("127.0.0.1", port) as session:
+        async with await JdwpConnection.connect("127.0.0.1", port) as session:
             await assert_jdwp_session_flow(session)
 
 
@@ -215,5 +215,5 @@ async def test_proxied_jdwp_connection() -> None:
 
         # 3. Use async context managers to manage server and client connections
         async with server:
-            async with await JdwpSession.connect("127.0.0.1", proxy_port) as session:
+            async with await JdwpConnection.connect("127.0.0.1", proxy_port) as session:
                 await assert_jdwp_session_flow(session)

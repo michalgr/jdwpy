@@ -13,6 +13,8 @@ from jdwpy.commands.vm import IDSizesResponse
 from jdwpy.connection import (
     JdwpPacketSender,
     JdwpPacketReceiver,
+    StreamJdwpPacketSender,
+    StreamJdwpPacketReceiver,
     establish_jdwp_connection,
 )
 
@@ -106,8 +108,8 @@ class JdwpProxySession:
         logger.info("Bi-directional JDWP Handshake completed successfully!")
 
         # 3. Initialize wrapper objects
-        dbg_sender = JdwpPacketSender(dbg_writer)
-        dbg_receiver = JdwpPacketReceiver(dbg_reader)
+        dbg_sender = StreamJdwpPacketSender(dbg_writer)
+        dbg_receiver = StreamJdwpPacketReceiver(dbg_reader)
 
         return cls(
             dbg_sender,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import asyncio
 import logging
-from typing import Callable, Awaitable, Self, overload, Any, Protocol
+from typing import Self, overload, Any, Protocol
 from jdwpy.constants import JdwpErrorCode, HANDSHAKE
 from jdwpy.spec import IdSizesSpec
 from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
@@ -14,15 +14,19 @@ from jdwpy.commands.vm import IDSizesResponse
 logger = logging.getLogger(__name__)
 
 
-class JdwpCommandSource[T: (JdwpCommandPacket, JdwpCommand[Any])](Protocol):
-    """Generic interface for a source of commands (parsed JdwpCommand or raw JdwpCommandPacket)."""
+class JdwpPacketSender(Protocol):
+    """Interface for writing JdwpPacket objects to a stream or buffer."""
 
-    async def receive_command(self) -> T:
-        """Receives the next command or command packet from the source."""
+    async def send(self, packet: JdwpPacket) -> None:
+        """Writes and flushes a JdwpPacket to the target."""
+        ...
+
+    async def close(self) -> None:
+        """Closes the packet sender."""
         ...
 
 
-class JdwpPacketSender:
+class StreamJdwpPacketSender(JdwpPacketSender):
     """Handles writing and flushing JdwpPacket objects to a stream writer."""
 
     _writer: asyncio.StreamWriter
@@ -41,7 +45,19 @@ class JdwpPacketSender:
         await self._writer.wait_closed()
 
 
-class JdwpPacketReceiver:
+class JdwpPacketReceiver(Protocol):
+    """Interface for reading JdwpPacket objects from a stream or buffer."""
+
+    async def receive(self) -> JdwpPacket:
+        """Reads a single JdwpPacket."""
+        ...
+
+    async def close(self) -> None:
+        """Closes the packet receiver."""
+        ...
+
+
+class StreamJdwpPacketReceiver(JdwpPacketReceiver):
     """Reads JdwpPacket objects from a stream reader."""
 
     _reader: asyncio.StreamReader
@@ -75,10 +91,10 @@ async def establish_jdwp_connection(
             f"Handshake failed. Expected '{HANDSHAKE.decode()}', got '{response.decode(errors='replace')}'"
         )
 
-    return JdwpPacketSender(writer), JdwpPacketReceiver(reader)
+    return StreamJdwpPacketSender(writer), StreamJdwpPacketReceiver(reader)
 
 
-class JdwpPacketConnection(JdwpCommandSource[JdwpCommandPacket]):
+class JdwpPacketConnection:
     """Coordinates JdwpPacketSender and JdwpPacketReceiver for client request-reply mapping."""
 
     sender: JdwpPacketSender
@@ -130,41 +146,12 @@ class JdwpPacketConnection(JdwpCommandSource[JdwpCommandPacket]):
         await self.sender.close()
 
 
-class JdwpSession:
-    """An active debug session wrapping a JdwpConnection.
+class JdwpConnection(Protocol):
+    """Interface for sending and receiving high-level JdwpCommand and JdwpResponse objects."""
 
-    Manages the background async task that drives reading from the connection,
-    enabling both concurrent command-response flows and streaming VM-initiated commands (events).
-    """
-
-    connection: JdwpConnection
-    _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
-    _read_task: asyncio.Task | None
-    _read_exception: Exception | None
-
-    def __init__(self, conn: JdwpConnection) -> None:
-        self.connection = conn
-        self._incoming_commands = asyncio.Queue()
-        self._read_task = None
-        self._read_exception = None
-
-    def start(self) -> None:
-        """Starts the background reading task."""
-        if self._read_task is None:
-            self._read_task = asyncio.create_task(self._read_loop())
-
-    async def _read_loop(self) -> None:
-        try:
-            while True:
-                cmd = await self.connection.receive_command()
-                await self._incoming_commands.put(cmd)
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            logger.debug("JdwpSession read loop exception: %r", e)
-            self._read_exception = e
-        finally:
-            await self._incoming_commands.put(None)
+    async def receive_command(self) -> JdwpCommand[Any]:
+        """Receives a high-level JdwpCommand from the connection."""
+        ...
 
     @overload
     async def send_command(self, cmd: JdwpCommand[None]) -> None: ...
@@ -174,20 +161,11 @@ class JdwpSession:
 
     async def send_command(self, cmd: JdwpCommand[Any]) -> JdwpResponse | None:
         """Sends a JdwpCommand, awaiting and validating the response."""
-        self.start()  # Auto-start read loop if not started
-        return await self.connection.send_command(cmd)
+        ...
 
-    async def receive_command(self) -> JdwpCommand[Any]:
-        """Receives the next VM-initiated command (event)."""
-        self.start()
-        item = await self._incoming_commands.get()
-        if item is None:
-            if self._read_exception:
-                raise RuntimeError(
-                    "Session closed due to error"
-                ) from self._read_exception
-            raise RuntimeError("Session closed")
-        return item
+    async def close(self) -> None:
+        """Closes the connection."""
+        ...
 
     def __aiter__(self) -> Self:
         return self
@@ -198,32 +176,20 @@ class JdwpSession:
         except RuntimeError:
             raise StopAsyncIteration
 
-    async def close(self) -> None:
-        """Stops the background task and closes the connection."""
-        if self._read_task and not self._read_task.done():
-            self._read_task.cancel()
-            try:
-                await self._read_task
-            except asyncio.CancelledError:
-                pass
-        await self.connection.close()
-
     async def __aenter__(self) -> Self:
-        self.start()
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         await self.close()
 
     @classmethod
-    async def connect(cls, host: str, port: int) -> Self:
-        """Establishes TCP connection to JDWP agent and returns an active JdwpSession."""
-        conn = await JdwpConnection.connect(host, port)
-        return cls(conn)
+    async def connect(cls, host: str, port: int) -> JdwpConnection:
+        """Establishes connection to JDWP agent and returns JdwpConnection with async loop."""
+        return await JdwpConnectionWithAsyncLoop.connect(host, port)
 
 
-class JdwpConnection(JdwpCommandSource[JdwpCommand[Any]]):
-    """Higher-level connection abstraction that operates on JdwpCommand and JdwpResponse classes."""
+class DefaultJdwpConnection(JdwpConnection):
+    """Default concrete implementation of JdwpConnection interface focusing on request-reply."""
 
     _packet_conn: JdwpPacketConnection
     spec: IdSizesSpec
@@ -245,8 +211,8 @@ class JdwpConnection(JdwpCommandSource[JdwpCommand[Any]]):
         return pkt_id
 
     @classmethod
-    async def connect(cls, host: str, port: int) -> Self:
-        """Establishes connection to JDWP agent and returns JdwpConnection."""
+    async def connect(cls, host: str, port: int) -> DefaultJdwpConnection:
+        """Establishes connection to JDWP agent and returns DefaultJdwpConnection."""
         packet_conn = await JdwpPacketConnection.connect(host, port)
         return cls(packet_conn)
 
@@ -316,8 +282,81 @@ class JdwpConnection(JdwpCommandSource[JdwpCommand[Any]]):
         """Closes the underlying packet connection."""
         await self._packet_conn.close()
 
-    async def __aenter__(self) -> Self:
-        return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        await self.close()
+class JdwpConnectionWithAsyncLoop(JdwpConnection):
+    """Implementation of JdwpConnection that delegates to DefaultJdwpConnection
+
+    while managing a background async read loop and incoming command queue.
+    """
+
+    delegate: DefaultJdwpConnection
+    _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
+    _read_task: asyncio.Task | None
+    _read_exception: Exception | None
+
+    def __init__(self, delegate: DefaultJdwpConnection) -> None:
+        self.delegate = delegate
+        self._incoming_commands = asyncio.Queue()
+        self._read_task = None
+        self._read_exception = None
+
+    def start(self) -> None:
+        """Starts the background reading task."""
+        if self._read_task is None:
+            self._read_task = asyncio.create_task(self._read_loop())
+
+    async def _read_loop(self) -> None:
+        try:
+            while True:
+                cmd = await self.delegate.receive_command()
+                await self._incoming_commands.put(cmd)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.debug("JdwpConnectionWithAsyncLoop read loop exception: %r", e)
+            self._read_exception = e
+        finally:
+            await self._incoming_commands.put(None)
+
+    @classmethod
+    async def connect(cls, host: str, port: int) -> JdwpConnectionWithAsyncLoop:
+        """Establishes connection to JDWP agent and returns JdwpConnectionWithAsyncLoop."""
+        delegate = await DefaultJdwpConnection.connect(host, port)
+        return cls(delegate)
+
+    async def receive_command(self) -> JdwpCommand[Any]:
+        """Receives a high-level JdwpCommand from the background queue."""
+        self.start()
+        item = await self._incoming_commands.get()
+        if item is None:
+            if self._read_exception:
+                raise RuntimeError(
+                    "Connection closed due to error"
+                ) from self._read_exception
+            raise RuntimeError("Connection closed")
+        return item
+
+    @overload
+    async def send_command(self, cmd: JdwpCommand[None]) -> None: ...
+
+    @overload
+    async def send_command[T: JdwpResponse](self, cmd: JdwpCommand[T]) -> T: ...
+
+    async def send_command(self, cmd: JdwpCommand[Any]) -> JdwpResponse | None:
+        """Sends a JdwpCommand, awaiting and validating the response."""
+        self.start()  # Auto-start read loop if not started
+        return await self.delegate.send_command(cmd)
+
+    async def close(self) -> None:
+        """Stops the background task and closes the connection."""
+        if self._read_task and not self._read_task.done():
+            self._read_task.cancel()
+            try:
+                await self._read_task
+            except asyncio.CancelledError:
+                pass
+        await self.delegate.close()
+
+    async def __aenter__(self) -> Self:
+        self.start()
+        return self
