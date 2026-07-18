@@ -11,8 +11,8 @@ _COMMAND_TO_RESPONSE: dict[type[JdwpCommand[Any]], type[JdwpResponse]] = {}
 def register_command(response_class: type[JdwpResponse] | None = None):
     """Decorator to register a JdwpCommand concrete subclass and its response type mapping."""
 
-    def decorator[C: type[JdwpCommand[Any]]](cls: C) -> C:
-        _COMMAND_REGISTRY[(cls.COMMAND_SET, cls.COMMAND)] = cls  # type: ignore
+    def decorator[C: JdwpCommand[Any]](cls: type[C]) -> type[C]:
+        _COMMAND_REGISTRY[(cls.COMMAND_SET, cls.COMMAND)] = cls
         if response_class is not None:
             _COMMAND_TO_RESPONSE[cls] = response_class
         return cls
