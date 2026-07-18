@@ -5,7 +5,6 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 import pytest
-from typing import Any
 
 from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy, JdwpTag
 from jdwpy import commands

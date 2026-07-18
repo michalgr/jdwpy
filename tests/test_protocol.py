@@ -39,7 +39,6 @@ from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy import commands, JdwpException
 
 from jdwpy.connection import (
-    JdwpConnection,
     DefaultJdwpConnection,
     JdwpConnectionWithAsyncLoop,
     JdwpPacketConnection,
