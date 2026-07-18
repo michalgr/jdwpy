@@ -295,7 +295,7 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
     """
 
     delegate: DefaultJdwpConnection
-    _incoming_commands: asyncio.Queue[JdwpCommand[Any] | None]
+    _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
     _read_task: asyncio.Task | None
     _read_exception: Exception | None
 
@@ -321,7 +321,7 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
             logger.debug("JdwpConnectionWithAsyncLoop read loop exception: %r", e)
             self._read_exception = e
         finally:
-            await self._incoming_commands.put(None)
+            self._incoming_commands.shutdown()
 
     @classmethod
     async def connect(cls, host: str, port: int) -> JdwpConnectionWithAsyncLoop:
@@ -332,14 +332,14 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
     async def receive_command(self) -> JdwpCommand[Any]:
         """Receives a high-level JdwpCommand from the background queue."""
         self.start()
-        item = await self._incoming_commands.get()
-        if item is None:
+        try:
+            return await self._incoming_commands.get()
+        except asyncio.QueueShutDown:
             if self._read_exception:
                 raise RuntimeError(
                     "Connection closed due to error"
                 ) from self._read_exception
             raise RuntimeError("Connection closed")
-        return item
 
     @overload
     async def send_command(self, cmd: JdwpCommand[None]) -> None: ...
