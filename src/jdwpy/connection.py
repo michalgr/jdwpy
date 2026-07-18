@@ -124,6 +124,11 @@ class JdwpPacketConnection:
                     future = self._pending_replies.pop(packet.id, None)
                     if future and not future.done():
                         future.set_result(packet)
+                    else:
+                        logger.warning(
+                            "Received JDWP reply with ID %d but no active pending request",
+                            packet.id,
+                        )
                 elif isinstance(packet, JdwpCommandPacket):
                     return packet
         except Exception as e:
