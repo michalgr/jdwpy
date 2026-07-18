@@ -43,7 +43,7 @@ from jdwpy.connection import (
     JdwpPacketConnection,
     JdwpPacketSender,
     JdwpPacketReceiver,
-    JdwpConnectionRunner,
+    JdwpSession,
 )
 
 
@@ -67,19 +67,19 @@ class MockStreamWriter:
         await asyncio.sleep(0)
 
 
-def create_mock_connection(
+def create_mock_session(
     spec: IdSizesSpec | None = None,
-) -> tuple[JdwpConnection, asyncio.StreamReader, MockStreamWriter]:
-    """Helper factory that constructs all JDWP connection mock objects."""
+) -> tuple[JdwpSession, asyncio.StreamReader, MockStreamWriter]:
+    """Helper factory that constructs all JDWP session mock objects."""
     reader = asyncio.StreamReader()
     writer = MockStreamWriter()
     sender = JdwpPacketSender(writer)  # type: ignore
     receiver = JdwpPacketReceiver(reader)
     packet_conn = JdwpPacketConnection(sender, receiver)
     conn = JdwpConnection(packet_conn, spec=spec)
-    runner = JdwpConnectionRunner(conn)
-    runner.start()
-    return conn, reader, writer
+    session = JdwpSession(conn)
+    session.start()
+    return session, reader, writer
 
 
 def parse_command_packet(buffer: bytes | bytearray) -> JdwpCommandPacket:
@@ -106,13 +106,12 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
     spec: IdSizesSpec | None = None,
 ) -> None:
     """Generic helper that sets up a mock connection, runs assertions on serialization,
-
     and executes a full JDWP command-response roundtrip.
     """
-    conn, reader, writer = create_mock_connection(spec)
-    async with conn:
+    session, reader, writer = create_mock_session(spec)
+    async with session:
         # 1. Launch sending the command
-        task = asyncio.create_task(conn.send_command(command))
+        task = asyncio.create_task(session.send_command(command))
         await asyncio.sleep(0)  # Yield execution to let command write to mock stream
 
         # 2. Verify command set, command, and command payload match on the wire
@@ -121,7 +120,9 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
         assert packet.command == command.COMMAND
 
         # Deserialize the bytes written to the writer, verifying they reconstruct the command
-        deserialized_command = command.__class__.from_bytes(packet.data, conn.spec)
+        deserialized_command = command.__class__.from_bytes(
+            packet.data, session.connection.spec
+        )
         assert deserialized_command == command
 
         # 3. If a response is expected, serialize expected_response to feed mock reply
@@ -130,7 +131,7 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
 
         if response_class is not None:
             assert expected_response is not None
-            serialized_response = expected_response.to_bytes(conn.spec)
+            serialized_response = expected_response.to_bytes(session.connection.spec)
             feed_reply(reader, packet.id, serialized_response)
 
         response = await task
@@ -140,14 +141,22 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
 
         # Verify dynamic spec updates when commands.vm.IDSizesResponse is received
         if isinstance(response, commands.vm.IDSizesResponse):
-            assert conn.spec.field_id_struct.size == response.field_id_size
-            assert conn.spec.object_id_struct.size == response.object_id_size
-            assert conn.spec.method_id_struct.size == response.method_id_size
             assert (
-                conn.spec.reference_type_id_struct.size
+                session.connection.spec.field_id_struct.size == response.field_id_size
+            )
+            assert (
+                session.connection.spec.object_id_struct.size == response.object_id_size
+            )
+            assert (
+                session.connection.spec.method_id_struct.size == response.method_id_size
+            )
+            assert (
+                session.connection.spec.reference_type_id_struct.size
                 == response.reference_type_id_size
             )
-            assert conn.spec.frame_id_struct.size == response.frame_id_size
+            assert (
+                session.connection.spec.frame_id_struct.size == response.frame_id_size
+            )
 
 
 def test_id_sizes_spec_struct_compilation() -> None:
@@ -1647,11 +1656,11 @@ async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> Non
     import logging
 
     spec = IdSizesSpec.create()
-    conn, reader, writer = create_mock_connection(spec)
+    session, reader, writer = create_mock_session(spec)
 
-    async with conn:
+    async with session:
         # Launch VersionCommand which only allows VM_DEAD and NONE
-        task = asyncio.create_task(conn.send_command(commands.vm.VersionCommand()))
+        task = asyncio.create_task(session.send_command(commands.vm.VersionCommand()))
         await asyncio.sleep(0)
 
         # Parse command packet to get ID

@@ -130,36 +130,96 @@ class JdwpPacketConnection(JdwpCommandSource[JdwpCommandPacket]):
         await self.sender.close()
 
 
-class JdwpConnectionRunner[T: (JdwpCommandPacket, JdwpCommand[Any])]:
-    """Manages the background async task that reads from a JdwpCommandSource."""
+class JdwpSession:
+    """An active debug session wrapping a JdwpConnection.
 
-    _source: JdwpCommandSource[T]
+    Manages the background async task that drives reading from the connection,
+    enabling both concurrent command-response flows and streaming VM-initiated commands (events).
+    """
+
+    connection: JdwpConnection
+    _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
     _read_task: asyncio.Task | None
-    command_queue: asyncio.Queue[T]
+    _read_exception: Exception | None
 
-    def __init__(self, source: JdwpCommandSource[T]) -> None:
-        self._source = source
+    def __init__(self, conn: JdwpConnection) -> None:
+        self.connection = conn
+        self._incoming_commands = asyncio.Queue()
         self._read_task = None
-        self.command_queue = asyncio.Queue()
+        self._read_exception = None
 
     def start(self) -> None:
-        """Starts the background reading loop task."""
-        self._read_task = asyncio.create_task(self._read_loop())
+        """Starts the background reading task."""
+        if self._read_task is None:
+            self._read_task = asyncio.create_task(self._read_loop())
 
     async def _read_loop(self) -> None:
         try:
             while True:
-                item = await self._source.receive_command()
-                await self.command_queue.put(item)
+                cmd = await self.connection.receive_command()
+                await self._incoming_commands.put(cmd)
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            logger.debug("JdwpConnectionRunner loop exception: %r", e)
+            logger.debug("JdwpSession read loop exception: %r", e)
+            self._read_exception = e
+        finally:
+            await self._incoming_commands.put(None)
 
-    def close(self) -> None:
-        """Cancels the background reading task."""
+    @overload
+    async def send_command(self, cmd: JdwpCommand[None]) -> None: ...
+
+    @overload
+    async def send_command[T: JdwpResponse](self, cmd: JdwpCommand[T]) -> T: ...
+
+    async def send_command(self, cmd: JdwpCommand[Any]) -> JdwpResponse | None:
+        """Sends a JdwpCommand, awaiting and validating the response."""
+        self.start()  # Auto-start read loop if not started
+        return await self.connection.send_command(cmd)
+
+    async def receive_command(self) -> JdwpCommand[Any]:
+        """Receives the next VM-initiated command (event)."""
+        self.start()
+        item = await self._incoming_commands.get()
+        if item is None:
+            if self._read_exception:
+                raise RuntimeError(
+                    "Session closed due to error"
+                ) from self._read_exception
+            raise RuntimeError("Session closed")
+        return item
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> JdwpCommand[Any]:
+        try:
+            return await self.receive_command()
+        except RuntimeError:
+            raise StopAsyncIteration
+
+    async def close(self) -> None:
+        """Stops the background task and closes the connection."""
         if self._read_task and not self._read_task.done():
             self._read_task.cancel()
+            try:
+                await self._read_task
+            except asyncio.CancelledError:
+                pass
+        await self.connection.close()
+
+    async def __aenter__(self) -> Self:
+        self.start()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.close()
+
+    @classmethod
+    async def connect(cls, host: str, port: int) -> Self:
+        """Establishes TCP connection to JDWP agent and returns an active JdwpSession."""
+        conn = await JdwpConnection.connect(host, port)
+        return cls(conn)
 
 
 class JdwpConnection(JdwpCommandSource[JdwpCommand[Any]]):

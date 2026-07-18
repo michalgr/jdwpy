@@ -9,7 +9,7 @@ from typing import Any
 
 from jdwpy.constants import JdwpEventKind, JdwpSuspendPolicy, JdwpTag
 from jdwpy import commands
-from jdwpy.connection import JdwpConnection, JdwpConnectionRunner
+from jdwpy.connection import JdwpSession
 from jdwpy.proxy import JdwpProxySession
 from jdwpy.spec import Location
 from jdwpy.testing import compile_java, find_free_port, wait_for_port
@@ -58,24 +58,22 @@ def running_jvm_debuggee():
                 proc.wait()
 
 
-async def assert_jdwp_session_flow(
-    conn: JdwpConnection, runner: JdwpConnectionRunner[Any]
-) -> None:
+async def assert_jdwp_session_flow(session: JdwpSession) -> None:
     """Establishes JDWP connection, sets class prep request, inspects methods,
     sets breakpoint on testMethod, and verifies stack trace and iteration parameter.
     """
     # 0. Read startup VM_START composite event command
-    event = await runner.command_queue.get()
+    event = await session.receive_command()
     assert isinstance(event, commands.event.CompositeCommand)
     assert len(event.events) == 1
     assert isinstance(event.events[0], commands.event.VMStartEvent)
 
     # 1. Send IDSizesCommand to configure Spec sizes
-    idsizes = await conn.send_command(commands.vm.IDSizesCommand())
+    idsizes = await session.send_command(commands.vm.IDSizesCommand())
     assert isinstance(idsizes, commands.vm.IDSizesResponse)
 
     # 2. Set a CLASS_PREPARE event request to monitor loading of SimpleApp
-    set_resp = await conn.send_command(
+    set_resp = await session.send_command(
         commands.event_request.SetCommand(
             event_kind=JdwpEventKind.CLASS_PREPARE,
             suspend_policy=JdwpSuspendPolicy.ALL,
@@ -87,24 +85,24 @@ async def assert_jdwp_session_flow(
     class_prep_request_id = set_resp.request_id
 
     # 3. Resume execution to trigger class preparation
-    await conn.send_command(commands.vm.ResumeCommand())
+    await session.send_command(commands.vm.ResumeCommand())
 
     # 4. Read ClassPrepareEvent for SimpleApp
-    event_cmd = await runner.command_queue.get()
+    event_cmd = await session.receive_command()
     assert isinstance(event_cmd, commands.event.CompositeCommand)
     class_prep = event_cmd.events[0]
     assert isinstance(class_prep, commands.event.ClassPrepareEvent)
     assert class_prep.signature == "LSimpleApp;"
 
     # 5. Retrieve methods of SimpleApp
-    methods_resp = await conn.send_command(
+    methods_resp = await session.send_command(
         commands.reference_type.MethodsCommand(ref_type=class_prep.type_id)
     )
     test_method = next(m for m in methods_resp.methods if m.name == "testMethod")
     method_id = test_method.method_id
 
     # 6. Retrieve variable table of testMethod to find slot for "iteration"
-    var_table_resp = await conn.send_command(
+    var_table_resp = await session.send_command(
         commands.method.VariableTableCommand(
             ref_type=class_prep.type_id, method=method_id
         )
@@ -119,7 +117,7 @@ async def assert_jdwp_session_flow(
         method_id=method_id,
         index=0,
     )
-    bp_set_resp = await conn.send_command(
+    bp_set_resp = await session.send_command(
         commands.event_request.SetCommand(
             event_kind=JdwpEventKind.BREAKPOINT,
             suspend_policy=JdwpSuspendPolicy.ALL,
@@ -131,17 +129,17 @@ async def assert_jdwp_session_flow(
     # 8. Loop for the first 3 iterations, verifying iteration value increases
     for expected_iteration in range(1, 4):
         # Resume VM
-        await conn.send_command(commands.vm.ResumeCommand())
+        await session.send_command(commands.vm.ResumeCommand())
 
         # Wait for breakpoint hit
-        bp_event_cmd = await runner.command_queue.get()
+        bp_event_cmd = await session.receive_command()
         assert isinstance(bp_event_cmd, commands.event.CompositeCommand)
         bp_event = bp_event_cmd.events[0]
         assert isinstance(bp_event, commands.event.BreakpointEvent)
         assert bp_event.request_id == bp_request_id
 
         # Get stack trace (frames)
-        frames_resp = await conn.send_command(
+        frames_resp = await session.send_command(
             commands.thread_reference.FramesCommand(
                 thread=bp_event.thread,
                 start_frame=0,
@@ -153,7 +151,7 @@ async def assert_jdwp_session_flow(
         assert top_frame.location.method_id == method_id
 
         # Get value of the local variable 'iteration' in the top frame
-        val_resp = await conn.send_command(
+        val_resp = await session.send_command(
             commands.stack_frame.GetValuesCommand(
                 thread=bp_event.thread,
                 frame=top_frame.frame_id,
@@ -171,13 +169,13 @@ async def assert_jdwp_session_flow(
         assert iteration_val.value == expected_iteration
 
     # 9. Clean up event requests
-    await conn.send_command(
+    await session.send_command(
         commands.event_request.ClearCommand(
             event_kind=JdwpEventKind.BREAKPOINT,
             request_id=bp_request_id,
         )
     )
-    await conn.send_command(
+    await session.send_command(
         commands.event_request.ClearCommand(
             event_kind=JdwpEventKind.CLASS_PREPARE,
             request_id=class_prep_request_id,
@@ -185,7 +183,7 @@ async def assert_jdwp_session_flow(
     )
 
     # 10. Resume JVM to complete execution
-    await conn.send_command(commands.vm.ResumeCommand())
+    await session.send_command(commands.vm.ResumeCommand())
 
 
 @pytest.mark.asyncio
@@ -193,13 +191,8 @@ async def test_direct_jdwp_connection() -> None:
     """Verifies that we can connect directly to a JVM JDWP agent, exchange version & id size packets."""
     with running_jvm_debuggee() as (port, proc):
         # 1. Connect directly to JVM JDWP agent
-        async with await JdwpConnection.connect("127.0.0.1", port) as conn:
-            runner = JdwpConnectionRunner(conn)
-            runner.start()
-            try:
-                await assert_jdwp_session_flow(conn, runner)
-            finally:
-                runner.close()
+        async with await JdwpSession.connect("127.0.0.1", port) as session:
+            await assert_jdwp_session_flow(session)
 
 
 @pytest.mark.asyncio
@@ -222,10 +215,5 @@ async def test_proxied_jdwp_connection() -> None:
 
         # 3. Use async context managers to manage server and client connections
         async with server:
-            async with await JdwpConnection.connect("127.0.0.1", proxy_port) as conn:
-                runner = JdwpConnectionRunner(conn)
-                runner.start()
-                try:
-                    await assert_jdwp_session_flow(conn, runner)
-                finally:
-                    runner.close()
+            async with await JdwpSession.connect("127.0.0.1", proxy_port) as session:
+                await assert_jdwp_session_flow(session)

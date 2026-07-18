@@ -23,7 +23,7 @@ from jdwpy.exceptions import JdwpException
 from jdwpy.connection import (
     JdwpConnection,
     JdwpPacketConnection,
-    JdwpConnectionRunner,
+    JdwpSession,
     establish_jdwp_connection,
 )
 from jdwpy.commands import JdwpCommand, JdwpResponse
@@ -51,7 +51,7 @@ __all__ = [
     "JdwpException",
     "JdwpConnection",
     "JdwpPacketConnection",
-    "JdwpConnectionRunner",
+    "JdwpSession",
     "establish_jdwp_connection",
     "JdwpCommand",
     "JdwpResponse",
