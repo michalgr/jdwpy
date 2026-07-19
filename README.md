@@ -24,6 +24,7 @@ jdwpy/
 ├── README.md              # Documentation
 ├── flake.nix              # Nix Flake environment configuration
 ├── shell.nix              # Nix shell (compat/fallback) environment configuration
+├── examples/              # Runnable usage example scripts
 ├── src/
 │   └── jdwpy/
 │       ├── __init__.py    # Public exports
@@ -86,6 +87,10 @@ uv sync
 ---
 
 ## Usage Examples
+
+Complete, runnable example scripts are located in the [examples/](examples/) directory:
+- [get_version.py](examples/get_version.py): Connects, queries JVM info, dynamically adjusts dynamic sizes, and resumes execution.
+- [breakpoint_example.py](examples/breakpoint_example.py): Sets event filters, catches breakpoint events, and queries thread frame local variable slots.
 
 ### 1. Connecting Asynchronously to a JVM Debug Target
 

@@ -12,6 +12,7 @@ dependencies = []
 [tool.pyrefly]
 project-includes = [
     "src/**/*.py",
+    "examples/**/*.py",
 ]
 
 

@@ -39,3 +39,20 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+      - name: Run get_version example
+        run: |
+          javac -g tests/testdata/SimpleApp.java -d classes
+          java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=127.0.0.1:8000 -cp classes SimpleApp &
+          JVM_PID=$!
+          sleep 1
+          uv run examples/get_version.py
+          wait $JVM_PID
+
+      - name: Run breakpoint_example
+        run: |
+          java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=127.0.0.1:8000 -cp classes SimpleApp &
+          JVM_PID=$!
+          sleep 1
+          uv run examples/breakpoint_example.py
+          wait $JVM_PID

@@ -246,8 +246,8 @@ class JdwpConnection(Protocol):
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         await self.close()
 
-    @classmethod
-    async def connect(cls, host: str, port: int) -> JdwpConnection:
+    @staticmethod
+    async def connect(host: str, port: int) -> JdwpConnection:
         """Establishes connection to JDWP agent and returns JdwpConnection with async loop."""
         return await JdwpConnectionWithAsyncLoop.connect(host, port)
 
