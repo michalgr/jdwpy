@@ -223,7 +223,7 @@ class JdwpProxySession:
         if self.on_packet_log:
             self.on_packet_log(packet, direction, log_msg)
         else:
-            logger.debug(log_msg)
+            logger.info(log_msg)
 
     def _format_raw_command(
         self, packet: JdwpCommandPacket, direction: JdwpDirection
@@ -306,21 +306,14 @@ async def main() -> None:
         default=8700,
         help="Target JVM JDWP Port (default: 8700)",
     )
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="store_true",
-        help="Enable verbose packet-level logging (debug level)",
-    )
     args = parser.parse_args()
 
     # Configure root logger with simple message format
-    log_level = logging.DEBUG if args.verbose else logging.INFO
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(logging.Formatter("%(message)s"))
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
+    root_logger.setLevel(logging.INFO)
     root_logger.addHandler(handler)
 
     logger.info(f"[*] Starting JDWP Logging Proxy on port {args.listen_port}...")
