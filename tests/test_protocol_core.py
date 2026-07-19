@@ -137,3 +137,48 @@ async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> Non
             and "Received unexpected JDWP error code INVALID_THREAD" in rec.message
         ]
         assert len(warnings) == 1
+
+
+@pytest.mark.asyncio
+async def test_close_with_pending_command() -> None:
+    spec = IdSizesSpec.create()
+    session, reader, writer = create_mock_session(spec)
+
+    async with session:
+        # Send a command but don't feed a response
+        task = asyncio.create_task(session.send_command(commands.vm.VersionCommand()))
+        await asyncio.sleep(
+            0.01
+        )  # Let it write to the stream and register in pending replies
+
+    # After exiting the context manager (which calls close()), the task should be resolved/failed, not hang!
+    with pytest.raises(asyncio.CancelledError):
+        await asyncio.wait_for(task, timeout=1.0)
+
+
+@pytest.mark.asyncio
+async def test_send_command_on_closed_connection() -> None:
+    spec = IdSizesSpec.create()
+    session, reader, writer = create_mock_session(spec)
+
+    async with session:
+        pass  # Just establish and close immediately
+
+    # Now the connection is closed. Sending a command should raise RuntimeError.
+    with pytest.raises(RuntimeError, match="Connection closed"):
+        await session.send_command(commands.vm.VersionCommand())
+
+
+@pytest.mark.asyncio
+async def test_send_command_on_errored_connection() -> None:
+    spec = IdSizesSpec.create()
+    session, reader, writer = create_mock_session(spec)
+
+    async with session:
+        # Feed garbage data that will cause deserialization/read logic to throw ValueError/IncompleteReadError
+        reader.feed_data(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+        await asyncio.sleep(0.01)  # Let read loop wake up and crash
+
+        # Now the connection is in error. Sending a command should raise RuntimeError.
+        with pytest.raises(RuntimeError, match="Connection closed due to error"):
+            await session.send_command(commands.vm.VersionCommand())

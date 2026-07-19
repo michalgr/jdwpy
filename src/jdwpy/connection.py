@@ -94,17 +94,62 @@ async def establish_jdwp_connection(
     return StreamJdwpPacketSender(writer), StreamJdwpPacketReceiver(reader)
 
 
+class ConnectionState:
+    """Manages the lifecycle state (closed/error) of a connection or event loop."""
+
+    _closed: bool
+    _error: BaseException | None
+
+    def __init__(self) -> None:
+        self._closed = False
+        self._error = None
+
+    @property
+    def is_closed(self) -> bool:
+        """Returns True if the connection has been explicitly closed."""
+        return self._closed
+
+    @property
+    def error(self) -> BaseException | None:
+        """Returns the exception that caused the connection to error out, if any."""
+        return self._error
+
+    def mark_closed(self) -> None:
+        """Marks the connection state as closed."""
+        self._closed = True
+
+    def mark_error(self, error: BaseException) -> None:
+        """Marks the connection state as errored due to the given exception."""
+        if self._error is None:
+            self._error = error
+
+    def check(self) -> None:
+        """Raises RuntimeError if the state indicates closed or errored."""
+        if self._closed:
+            raise RuntimeError("Connection closed")
+        if self._error:
+            raise RuntimeError("Connection closed due to error") from self._error
+
+
 class JdwpPacketConnection:
     """Coordinates JdwpPacketSender and JdwpPacketReceiver for client request-reply mapping."""
 
     sender: JdwpPacketSender
     receiver: JdwpPacketReceiver
     _pending_replies: dict[int, asyncio.Future[JdwpReplyPacket]]
+    _state: ConnectionState
 
     def __init__(self, sender: JdwpPacketSender, receiver: JdwpPacketReceiver) -> None:
         self.sender = sender
         self.receiver = receiver
         self._pending_replies = {}
+        self._state = ConnectionState()
+
+    def _clear_pending_replies(self) -> list[asyncio.Future[JdwpReplyPacket]]:
+        """Clears the pending replies and returns the list of unresolved futures."""
+        unresolved = [fut for fut in self._pending_replies.values() if not fut.done()]
+        self._pending_replies.clear()
+        return unresolved
 
     @classmethod
     async def connect(cls, host: str, port: int) -> Self:
@@ -117,6 +162,7 @@ class JdwpPacketConnection:
 
         resolving pending reply futures as JdwpReplyPackets are encountered.
         """
+        self._state.check()
         try:
             while True:
                 packet = await self.receiver.receive()
@@ -131,22 +177,33 @@ class JdwpPacketConnection:
                         )
                 elif isinstance(packet, JdwpCommandPacket):
                     return packet
-        except Exception as e:
-            for fut in list(self._pending_replies.values()):
-                if not fut.done():
-                    fut.set_exception(e)
-            self._pending_replies.clear()
+        except asyncio.CancelledError as e:
+            self._state.mark_error(e)
+            for fut in self._clear_pending_replies():
+                fut.cancel()
+            raise
+        except BaseException as e:
+            self._state.mark_error(e)
+            for fut in self._clear_pending_replies():
+                fut.set_exception(e)
             raise
 
     async def send_command_packet(self, packet: JdwpCommandPacket) -> JdwpReplyPacket:
         """Sends a JdwpCommandPacket and awaits the corresponding JdwpReplyPacket."""
+        self._state.check()
         future = asyncio.get_running_loop().create_future()
         self._pending_replies[packet.id] = future
-        await self.sender.send(packet)
-        return await future
+        try:
+            await self.sender.send(packet)
+            return await future
+        finally:
+            self._pending_replies.pop(packet.id, None)
 
     async def close(self) -> None:
         """Gracefully closes sender and receiver."""
+        self._state.mark_closed()
+        for fut in self._clear_pending_replies():
+            fut.cancel()
         await self.receiver.close()
         await self.sender.close()
 
@@ -297,13 +354,13 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
     delegate: DefaultJdwpConnection
     _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
     _read_task: asyncio.Task | None
-    _read_exception: Exception | None
+    _state: ConnectionState
 
     def __init__(self, delegate: DefaultJdwpConnection) -> None:
         self.delegate = delegate
         self._incoming_commands = asyncio.Queue()
         self._read_task = None
-        self._read_exception = None
+        self._state = ConnectionState()
 
     def start(self) -> None:
         """Starts the background reading task."""
@@ -319,7 +376,7 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
             pass
         except Exception as e:
             logger.debug("JdwpConnectionWithAsyncLoop read loop exception: %r", e)
-            self._read_exception = e
+            self._state.mark_error(e)
         finally:
             self._incoming_commands.shutdown()
 
@@ -335,10 +392,7 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
         try:
             return await self._incoming_commands.get()
         except asyncio.QueueShutDown:
-            if self._read_exception:
-                raise RuntimeError(
-                    "Connection closed due to error"
-                ) from self._read_exception
+            self._state.check()
             raise RuntimeError("Connection closed")
 
     @overload
@@ -350,10 +404,12 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
     async def send_command(self, cmd: JdwpCommand[Any]) -> JdwpResponse | None:
         """Sends a JdwpCommand, awaiting and validating the response."""
         self.start()  # Auto-start read loop if not started
+        self._state.check()
         return await self.delegate.send_command(cmd)
 
     async def close(self) -> None:
         """Stops the background task and closes the connection."""
+        self._state.mark_closed()
         if self._read_task and not self._read_task.done():
             self._read_task.cancel()
             try:
