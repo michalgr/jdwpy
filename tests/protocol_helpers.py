@@ -1,15 +1,15 @@
 from __future__ import annotations
 import asyncio
 from jdwpy.spec import IdSizesSpec
-from jdwpy.packet import JdwpCommandPacket, JdwpReplyPacket
+from jdwpy.packet import JdwpPacket, JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.constants import JdwpErrorCode
 from jdwpy import commands
 from jdwpy.connection import (
     SimpleJdwpConnection,
     JdwpConnectionWithAsyncLoop,
     JdwpPacketConnection,
-    StreamJdwpPacketSender,
-    StreamJdwpPacketReceiver,
+    JdwpPacketSender,
+    JdwpPacketReceiver,
 )
 
 
@@ -33,37 +33,70 @@ class MockStreamWriter:
         await asyncio.sleep(0)
 
 
+class MockJdwpPacketSender(JdwpPacketSender):
+    """Mock JdwpPacketSender that writes packets to an asyncio.Queue."""
+
+    sent_packets: asyncio.Queue[JdwpPacket]
+    closed: bool
+
+    def __init__(self) -> None:
+        self.sent_packets = asyncio.Queue()
+        self.closed = False
+
+    async def send(self, packet: JdwpPacket) -> None:
+        if self.closed:
+            raise RuntimeError("Sender is closed")
+        await self.sent_packets.put(packet)
+
+    async def close(self) -> None:
+        self.closed = True
+
+
+class MockJdwpPacketReceiver(JdwpPacketReceiver):
+    """Mock JdwpPacketReceiver that reads packets from an asyncio.Queue."""
+
+    incoming_packets: asyncio.Queue[JdwpPacket]
+    closed: bool
+    _error_to_raise: BaseException | None
+
+    def __init__(self) -> None:
+        self.incoming_packets = asyncio.Queue()
+        self.closed = False
+        self._error_to_raise = None
+
+    def inject_error(self, error: BaseException) -> None:
+        """Injects an error into the receiver, making any subsequent receive fail."""
+        self._error_to_raise = error
+        self.incoming_packets.shutdown()
+
+    async def receive(self) -> JdwpPacket:
+        if self._error_to_raise:
+            raise self._error_to_raise
+        if self.closed:
+            raise RuntimeError("Receiver is closed")
+        try:
+            return await self.incoming_packets.get()
+        except asyncio.QueueShutDown:
+            if self._error_to_raise:
+                raise self._error_to_raise
+            raise RuntimeError("Receiver is closed")
+
+    async def close(self) -> None:
+        self.closed = True
+        self.incoming_packets.shutdown()
+
+
 def create_mock_session(
     spec: IdSizesSpec | None = None,
-) -> tuple[JdwpConnectionWithAsyncLoop, asyncio.StreamReader, MockStreamWriter]:
+) -> tuple[JdwpConnectionWithAsyncLoop, MockJdwpPacketReceiver, MockJdwpPacketSender]:
     """Helper factory that constructs all JDWP session mock objects."""
-    reader = asyncio.StreamReader()
-    writer = MockStreamWriter()
-    sender = StreamJdwpPacketSender(writer)  # type: ignore
-    receiver = StreamJdwpPacketReceiver(reader)
+    sender = MockJdwpPacketSender()
+    receiver = MockJdwpPacketReceiver()
     packet_conn = JdwpPacketConnection(sender, receiver)
     conn = SimpleJdwpConnection(packet_conn, spec=spec)
     session = JdwpConnectionWithAsyncLoop(conn)
     session.start()
-    return session, reader, writer
-
-
-def parse_command_packet(buffer: bytes | bytearray) -> JdwpCommandPacket:
-    """Parses a JdwpCommandPacket from a raw bytes buffer."""
-    if len(buffer) < 11:
-        raise ValueError("Buffer too short for JDWP packet")
-    return JdwpCommandPacket.from_bytes(bytes(buffer[:11]), bytes(buffer[11:]))
-
-
-def feed_reply(reader: asyncio.StreamReader, packet_id: int, payload: bytes) -> None:
-    """Serializes a successful JdwpReplyPacket and feeds it to the StreamReader."""
-    reply = JdwpReplyPacket(
-        id=packet_id,
-        flags=0x80,
-        error_code=JdwpErrorCode.NONE,
-        data=payload,
-    )
-    reader.feed_data(reply.to_bytes())
+    return session, receiver, sender
 
 
 async def assert_command_roundtrip[T: commands.JdwpResponse | None](
@@ -74,14 +107,14 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
     """Generic helper that sets up a mock connection, runs assertions on serialization,
     and executes a full JDWP command-response roundtrip.
     """
-    session, reader, writer = create_mock_session(spec)
+    session, receiver, sender = create_mock_session(spec)
     async with session:
         # 1. Launch sending the command
         task = asyncio.create_task(session.send_command(command))
-        await asyncio.sleep(0)  # Yield execution to let command write to mock stream
 
-        # 2. Verify command set, command, and command payload match on the wire
-        packet = parse_command_packet(writer.buffer)
+        # 2. Retrieve sent packet and verify command set, command, and command payload
+        packet = await sender.sent_packets.get()
+        assert isinstance(packet, JdwpCommandPacket)
         assert packet.command_set == command.COMMAND_SET
         assert packet.command == command.COMMAND
 
@@ -98,7 +131,13 @@ async def assert_command_roundtrip[T: commands.JdwpResponse | None](
         if response_class is not None:
             assert expected_response is not None
             serialized_response = expected_response.to_bytes(session.delegate.spec)
-            feed_reply(reader, packet.id, serialized_response)
+            reply = JdwpReplyPacket(
+                id=packet.id,
+                flags=0x80,
+                error_code=JdwpErrorCode.NONE,
+                data=serialized_response,
+            )
+            await receiver.incoming_packets.put(reply)
 
         response = await task
 

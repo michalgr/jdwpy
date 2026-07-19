@@ -13,7 +13,6 @@ from jdwpy.constants import JdwpErrorCode
 from tests.protocol_helpers import (
     MockStreamWriter,
     create_mock_session,
-    parse_command_packet,
     assert_command_roundtrip,
 )
 
@@ -101,15 +100,14 @@ async def test_mock_command_set() -> None:
 async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> None:
     """Verifies that receiving a JDWP error not listed in the command's ALLOWED_ERRORS logs a warning."""
     spec = IdSizesSpec.create()
-    session, reader, writer = create_mock_session(spec)
+    session, receiver, sender = create_mock_session(spec)
 
     async with session:
         # Launch VersionCommand which only allows VM_DEAD and NONE
         task = asyncio.create_task(session.send_command(commands.vm.VersionCommand()))
-        await asyncio.sleep(0)
 
-        # Parse command packet to get ID
-        packet = parse_command_packet(writer.buffer)
+        # Get command packet to retrieve ID
+        packet = await sender.sent_packets.get()
 
         # Feed an invalid reply with an unexpected error: INVALID_THREAD (10)
         reply = JdwpReplyPacket(
@@ -118,7 +116,7 @@ async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> Non
             error_code=JdwpErrorCode.INVALID_THREAD,
             data=b"",
         )
-        reader.feed_data(reply.to_bytes())
+        await receiver.incoming_packets.put(reply)
 
         # Assert that executing the task raises JdwpException
         with pytest.raises(JdwpException) as exc_info:
@@ -142,14 +140,12 @@ async def test_unexpected_error_warning(caplog: pytest.LogCaptureFixture) -> Non
 @pytest.mark.asyncio
 async def test_close_with_pending_command() -> None:
     spec = IdSizesSpec.create()
-    session, reader, writer = create_mock_session(spec)
+    session, receiver, sender = create_mock_session(spec)
 
     async with session:
         # Send a command but don't feed a response
         task = asyncio.create_task(session.send_command(commands.vm.VersionCommand()))
-        await asyncio.sleep(
-            0.01
-        )  # Let it write to the stream and register in pending replies
+        await sender.sent_packets.get()
 
     # After exiting the context manager (which calls close()), the task should be resolved/failed, not hang!
     with pytest.raises(asyncio.CancelledError):
@@ -159,7 +155,7 @@ async def test_close_with_pending_command() -> None:
 @pytest.mark.asyncio
 async def test_send_command_on_closed_connection() -> None:
     spec = IdSizesSpec.create()
-    session, reader, writer = create_mock_session(spec)
+    session, receiver, sender = create_mock_session(spec)
 
     async with session:
         pass  # Just establish and close immediately
@@ -172,11 +168,11 @@ async def test_send_command_on_closed_connection() -> None:
 @pytest.mark.asyncio
 async def test_send_command_on_errored_connection() -> None:
     spec = IdSizesSpec.create()
-    session, reader, writer = create_mock_session(spec)
+    session, receiver, sender = create_mock_session(spec)
 
     async with session:
-        # Feed garbage data that will cause deserialization/read logic to throw ValueError/IncompleteReadError
-        reader.feed_data(b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+        # Feed an error to the receiver that will crash the read loop
+        receiver.inject_error(ValueError("Mock connection error"))
         await asyncio.sleep(0.01)  # Let read loop wake up and crash
 
         # Now the connection is in error. Sending a command should raise RuntimeError.
