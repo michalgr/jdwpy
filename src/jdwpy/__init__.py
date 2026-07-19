@@ -22,7 +22,7 @@ from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.exceptions import JdwpException
 from jdwpy.connection import (
     JdwpConnection,
-    DefaultJdwpConnection,
+    SimpleJdwpConnection,
     JdwpConnectionWithAsyncLoop,
     JdwpPacketConnection,
     JdwpPacketSender,
@@ -55,7 +55,7 @@ __all__ = [
     "JdwpWriter",
     "JdwpException",
     "JdwpConnection",
-    "DefaultJdwpConnection",
+    "SimpleJdwpConnection",
     "JdwpConnectionWithAsyncLoop",
     "JdwpPacketConnection",
     "JdwpPacketSender",

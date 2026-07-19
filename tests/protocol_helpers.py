@@ -5,7 +5,7 @@ from jdwpy.packet import JdwpCommandPacket, JdwpReplyPacket
 from jdwpy.constants import JdwpErrorCode
 from jdwpy import commands
 from jdwpy.connection import (
-    DefaultJdwpConnection,
+    SimpleJdwpConnection,
     JdwpConnectionWithAsyncLoop,
     JdwpPacketConnection,
     StreamJdwpPacketSender,
@@ -42,7 +42,7 @@ def create_mock_session(
     sender = StreamJdwpPacketSender(writer)  # type: ignore
     receiver = StreamJdwpPacketReceiver(reader)
     packet_conn = JdwpPacketConnection(sender, receiver)
-    conn = DefaultJdwpConnection(packet_conn, spec=spec)
+    conn = SimpleJdwpConnection(packet_conn, spec=spec)
     session = JdwpConnectionWithAsyncLoop(conn)
     session.start()
     return session, reader, writer

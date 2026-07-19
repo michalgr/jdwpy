@@ -191,6 +191,8 @@ class JdwpPacketConnection:
     async def send_command_packet(self, packet: JdwpCommandPacket) -> JdwpReplyPacket:
         """Sends a JdwpCommandPacket and awaits the corresponding JdwpReplyPacket."""
         self._state.check()
+        if packet.id in self._pending_replies:
+            raise RuntimeError(f"Duplicate JDWP packet ID: {packet.id}")
         future = asyncio.get_running_loop().create_future()
         self._pending_replies[packet.id] = future
         try:
@@ -250,8 +252,8 @@ class JdwpConnection(Protocol):
         return await JdwpConnectionWithAsyncLoop.connect(host, port)
 
 
-class DefaultJdwpConnection(JdwpConnection):
-    """Default concrete implementation of JdwpConnection interface focusing on request-reply."""
+class SimpleJdwpConnection(JdwpConnection):
+    """Simple concrete implementation of JdwpConnection interface focusing on request-reply."""
 
     _packet_conn: JdwpPacketConnection
     spec: IdSizesSpec
@@ -273,8 +275,8 @@ class DefaultJdwpConnection(JdwpConnection):
         return pkt_id
 
     @classmethod
-    async def connect(cls, host: str, port: int) -> DefaultJdwpConnection:
-        """Establishes connection to JDWP agent and returns DefaultJdwpConnection."""
+    async def connect(cls, host: str, port: int) -> SimpleJdwpConnection:
+        """Establishes connection to JDWP agent and returns SimpleJdwpConnection."""
         packet_conn = await JdwpPacketConnection.connect(host, port)
         return cls(packet_conn)
 
@@ -346,17 +348,17 @@ class DefaultJdwpConnection(JdwpConnection):
 
 
 class JdwpConnectionWithAsyncLoop(JdwpConnection):
-    """Implementation of JdwpConnection that delegates to DefaultJdwpConnection
+    """Implementation of JdwpConnection that delegates to SimpleJdwpConnection
 
     while managing a background async read loop and incoming command queue.
     """
 
-    delegate: DefaultJdwpConnection
+    delegate: SimpleJdwpConnection
     _incoming_commands: asyncio.Queue[JdwpCommand[Any]]
     _read_task: asyncio.Task | None
     _state: ConnectionState
 
-    def __init__(self, delegate: DefaultJdwpConnection) -> None:
+    def __init__(self, delegate: SimpleJdwpConnection) -> None:
         self.delegate = delegate
         self._incoming_commands = asyncio.Queue()
         self._read_task = None
@@ -383,7 +385,7 @@ class JdwpConnectionWithAsyncLoop(JdwpConnection):
     @classmethod
     async def connect(cls, host: str, port: int) -> JdwpConnectionWithAsyncLoop:
         """Establishes connection to JDWP agent and returns JdwpConnectionWithAsyncLoop."""
-        delegate = await DefaultJdwpConnection.connect(host, port)
+        delegate = await SimpleJdwpConnection.connect(host, port)
         return cls(delegate)
 
     async def receive_command(self) -> JdwpCommand[Any]:
