@@ -15,9 +15,9 @@ from jdwpy.constants import (
 from jdwpy.io import JdwpReader, JdwpWriter
 from jdwpy.spec import (
     Location,
-    ObjectID,
     ReferenceTypeID,
     FieldID,
+    ThreadID,
     TaggedObjectID,
     JdwpValue,
 )
@@ -47,14 +47,14 @@ class VMStartEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.VM_START
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
-        return cls(request_id=request_id, thread=reader.read_object_id())
+        return cls(request_id=request_id, thread=reader.read_thread_id())
 
 
 @dataclass
@@ -63,18 +63,18 @@ class SingleStepEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.SINGLE_STEP
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
         )
 
@@ -85,18 +85,18 @@ class BreakpointEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.BREAKPOINT
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
         )
 
@@ -107,18 +107,18 @@ class MethodEntryEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.METHOD_ENTRY
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
         )
 
@@ -129,18 +129,18 @@ class MethodExitEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.METHOD_EXIT
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
         )
 
@@ -151,12 +151,12 @@ class MethodExitWithReturnValueEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.METHOD_EXIT_WITH_RETURN_VALUE
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
     value: JdwpValue
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
         writer.write_value(self.value)
 
@@ -164,7 +164,7 @@ class MethodExitWithReturnValueEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
             value=reader.read_value(),
         )
@@ -176,12 +176,12 @@ class MonitorContendedEnterEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.MONITOR_CONTENDED_ENTER
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     object: TaggedObjectID
     location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_tagged_object(self.object)
         writer.write_location(self.location)
 
@@ -189,7 +189,7 @@ class MonitorContendedEnterEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             object=reader.read_tagged_object(),
             location=reader.read_location(),
         )
@@ -201,12 +201,12 @@ class MonitorContendedEnteredEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.MONITOR_CONTENDED_ENTERED
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     object: TaggedObjectID
     location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_tagged_object(self.object)
         writer.write_location(self.location)
 
@@ -214,7 +214,7 @@ class MonitorContendedEnteredEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             object=reader.read_tagged_object(),
             location=reader.read_location(),
         )
@@ -226,13 +226,13 @@ class MonitorWaitEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.MONITOR_WAIT
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     object: TaggedObjectID
     location: Location
     timeout: int
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_tagged_object(self.object)
         writer.write_location(self.location)
         writer.write_long(self.timeout)
@@ -241,7 +241,7 @@ class MonitorWaitEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             object=reader.read_tagged_object(),
             location=reader.read_location(),
             timeout=reader.read_long(),
@@ -254,13 +254,13 @@ class MonitorWaitedEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.MONITOR_WAITED
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     object: TaggedObjectID
     location: Location
     timed_out: bool
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_tagged_object(self.object)
         writer.write_location(self.location)
         writer.write_boolean(self.timed_out)
@@ -269,7 +269,7 @@ class MonitorWaitedEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             object=reader.read_tagged_object(),
             location=reader.read_location(),
             timed_out=reader.read_boolean(),
@@ -282,13 +282,13 @@ class ExceptionEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.EXCEPTION
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
     exception: TaggedObjectID
     catch_location: Location
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
         writer.write_tagged_object(self.exception)
         writer.write_location(self.catch_location)
@@ -297,7 +297,7 @@ class ExceptionEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
             exception=reader.read_tagged_object(),
             catch_location=reader.read_location(),
@@ -310,14 +310,14 @@ class ThreadStartEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.THREAD_START
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
-        return cls(request_id=request_id, thread=reader.read_object_id())
+        return cls(request_id=request_id, thread=reader.read_thread_id())
 
 
 @dataclass
@@ -326,14 +326,14 @@ class ThreadDeathEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.THREAD_DEATH
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
 
     @classmethod
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
-        return cls(request_id=request_id, thread=reader.read_object_id())
+        return cls(request_id=request_id, thread=reader.read_thread_id())
 
 
 @dataclass
@@ -342,14 +342,14 @@ class ClassPrepareEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.CLASS_PREPARE
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     ref_type_tag: JdwpTypeTag
     type_id: ReferenceTypeID
     signature: str
     status: JdwpClassStatus
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_byte(self.ref_type_tag)
         writer.write_reference_type_id(self.type_id)
         writer.write_string(self.signature)
@@ -359,7 +359,7 @@ class ClassPrepareEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             ref_type_tag=JdwpTypeTag(reader.read_byte()),
             type_id=reader.read_reference_type_id(),
             signature=reader.read_string(),
@@ -392,7 +392,7 @@ class FieldAccessEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.FIELD_ACCESS
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
     ref_type_tag: JdwpTypeTag
     type_id: ReferenceTypeID
@@ -400,7 +400,7 @@ class FieldAccessEvent(JdwpEvent):
     object: TaggedObjectID
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
         writer.write_byte(self.ref_type_tag)
         writer.write_reference_type_id(self.type_id)
@@ -411,7 +411,7 @@ class FieldAccessEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
             ref_type_tag=JdwpTypeTag(reader.read_byte()),
             type_id=reader.read_reference_type_id(),
@@ -426,7 +426,7 @@ class FieldModificationEvent(JdwpEvent):
 
     event_kind: ClassVar[JdwpEventKind] = JdwpEventKind.FIELD_MODIFICATION
     request_id: int
-    thread: ObjectID
+    thread: ThreadID
     location: Location
     ref_type_tag: JdwpTypeTag
     type_id: ReferenceTypeID
@@ -435,7 +435,7 @@ class FieldModificationEvent(JdwpEvent):
     value_to_be: JdwpValue
 
     def serialize(self, writer: JdwpWriter) -> None:
-        writer.write_object_id(self.thread)
+        writer.write_thread_id(self.thread)
         writer.write_location(self.location)
         writer.write_byte(self.ref_type_tag)
         writer.write_reference_type_id(self.type_id)
@@ -447,7 +447,7 @@ class FieldModificationEvent(JdwpEvent):
     def deserialize(cls, reader: JdwpReader, request_id: int) -> Self:
         return cls(
             request_id=request_id,
-            thread=reader.read_object_id(),
+            thread=reader.read_thread_id(),
             location=reader.read_location(),
             ref_type_tag=JdwpTypeTag(reader.read_byte()),
             type_id=reader.read_reference_type_id(),

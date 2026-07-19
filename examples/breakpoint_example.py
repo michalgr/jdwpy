@@ -21,7 +21,6 @@ from jdwpy import (
     JdwpSuspendPolicy,
     JdwpTag,
     Location,
-    ThreadID,
 )
 from jdwpy.commands import (
     vm,
@@ -117,13 +116,12 @@ async def main() -> None:
             assert isinstance(bp_composite, event.CompositeCommand)
             bp_event = bp_composite.events[0]
             assert isinstance(bp_event, event.BreakpointEvent)
-            thread_id = ThreadID(bp_event.thread)
-            print(f"[+] Breakpoint hit on thread: {thread_id}")
+            print(f"[+] Breakpoint hit on thread: {bp_event.thread}")
 
             # 10. Query thread call stack frames
             frames_resp = await conn.send_command(
                 thread_reference.FramesCommand(
-                    thread=thread_id, start_frame=0, length=1
+                    thread=bp_event.thread, start_frame=0, length=1
                 )
             )
             top_frame = frames_resp.frames[0]
@@ -133,7 +131,7 @@ async def main() -> None:
             print("[*] Reading value of variable 'iteration'...")
             val_resp = await conn.send_command(
                 stack_frame.GetValuesCommand(
-                    thread=thread_id,
+                    thread=bp_event.thread,
                     frame=top_frame.frame_id,
                     slots=[
                         stack_frame.GetValuesRequestSlot(
