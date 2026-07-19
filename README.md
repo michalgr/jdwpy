@@ -37,8 +37,10 @@ jdwpy/
 │       ├── testing.py     # Test utilities (Java compiling, port detection)
 │       └── commands/      # Registry and individual command set modules (VM, StackFrame, etc.)
 └── tests/
-    ├── test_protocol.py   # Low-level protocol serialization/deserialization tests
-    └── test_integration.py# Integration tests running a real target JVM
+    ├── test_protocol_core.py # Core protocol and connection tests
+    ├── test_io.py            # Low-level serialization/deserialization tests
+    ├── test_integration.py   # Integration tests running a real target JVM
+    └── commands/             # Individual command serialization tests
 ```
 
 ---
@@ -98,7 +100,7 @@ async def main():
     # Connect directly to the suspended JVM's JDWP port
     async with await JdwpConnection.connect("127.0.0.1", 8000) as conn:
         # 1. Read the initial VM_START event command
-        start_event = await conn.read_command()
+        start_event = await conn.receive_command()
         assert isinstance(start_event, event.CompositeCommand)
         print("Received VMStartEvent")
 
@@ -128,7 +130,7 @@ from jdwpy.commands import vm, event_request, event, reference_type, method, sta
 
 async def debug_session(conn: JdwpConnection):
     # Consume VMStartEvent and configure ID sizes
-    await conn.read_command()
+    await conn.receive_command()
     await conn.send_command(vm.IDSizesCommand())
 
     # Request notifications when the "SimpleApp" class is prepared (loaded)
@@ -144,7 +146,7 @@ async def debug_session(conn: JdwpConnection):
     await conn.send_command(vm.ResumeCommand())
 
     # Wait for the ClassPrepare event
-    composite = await conn.read_command()
+    composite = await conn.receive_command()
     prep_event = composite.events[0]
     class_id = prep_event.type_id
 
@@ -177,7 +179,7 @@ async def debug_session(conn: JdwpConnection):
     await conn.send_command(vm.ResumeCommand())
 
     # Wait for Breakpoint Event
-    bp_composite = await conn.read_command()
+    bp_composite = await conn.receive_command()
     bp_event = bp_composite.events[0]
 
     # Get thread call stack
@@ -210,7 +212,7 @@ async def debug_session(conn: JdwpConnection):
 The proxy captures, parses, and formats traffic between your debugger (e.g., `jdb` or IDE) and the target JVM:
 
 ```bash
-uv run python -m jdwpy.proxy --listen-port 5005 --target-host 127.0.0.1 --target-port 8000 --verbose
+uv run python -m jdwpy.proxy --listen-port 5005 --target-host 127.0.0.1 --target-port 8000
 ```
 
 Point your debugger to attach to `127.0.0.1:5005` instead of `8000`. The proxy intercepts the dynamic ID sizes response to configure its internal decoders, logs command sets/commands with human-readable class names, and outputs hexdumps of both directions.
